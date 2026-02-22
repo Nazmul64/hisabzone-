@@ -16,9 +16,13 @@
                    id="userDropdownToggle">
                     <img src="{{ asset('admin') }}/assets/images/avatars/avatar-2.png"
                          class="user-img" alt="user avatar">
-                    <div class="user-info">
+                   <div class="user-info">
+                    @auth
                         <p class="user-name mb-0">{{ auth()->user()->name }}</p>
-                    </div>
+                    @else
+                        <p class="user-name mb-0">Guest</p>
+                    @endauth
+                </div>
                     <i class='bx bx-chevron-down ms-1'></i>
                 </a>
 

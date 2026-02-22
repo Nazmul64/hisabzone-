@@ -105,12 +105,11 @@
         <li>
             <a href="javascript:void(0);" class="has-arrow">
                 <div class="parent-icon"><i class='bx bx-home-alt'></i></div>
-                <div class="menu-title">Dashboard</div>
+                <div class="menu-title">Slider</div>
             </a>
             <ul>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Infographic</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>eCommerce</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Analytics</a></li>
+                <li><a href="{{ route('slider.index') }}"><i class='bx bx-radio-circle'></i>Slider List</a></li>
+
             </ul>
         </li>
 
