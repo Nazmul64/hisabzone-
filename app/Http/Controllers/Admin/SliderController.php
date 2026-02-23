@@ -17,20 +17,21 @@ class SliderController extends Controller
 
     public function create()
     {
-        return view('admin.slider.create');
+        $titleKeys = $this->getAvailableTitleKeys();
+        return view('admin.slider.create', compact('titleKeys'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'title'  => 'required|string|max:255',
-            'url'    => 'nullable|url|max:255',
-            'photo'  => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status' => 'required|in:0,1',
+            'title'     => 'required|string|max:255',
+            'title_key' => 'nullable|string|max:100',
+            'url'       => 'nullable|url|max:255',
+            'photo'     => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'status'    => 'required|in:0,1',
         ]);
 
         $photoName = null;
-
         if ($request->hasFile('photo')) {
             $photo     = $request->file('photo');
             $photoName = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
@@ -38,10 +39,11 @@ class SliderController extends Controller
         }
 
         Slider::create([
-            'title'  => $request->title,
-            'url'    => $request->url,
-            'photo'  => $photoName,
-            'status' => $request->status,
+            'title'     => $request->title,
+            'title_key' => $request->title_key ?? '',
+            'url'       => $request->url,
+            'photo'     => $photoName,
+            'status'    => $request->status,
         ]);
 
         return redirect()->route('slider.index')
@@ -50,8 +52,9 @@ class SliderController extends Controller
 
     public function edit(string $id)
     {
-        $slider = Slider::findOrFail($id);
-        return view('admin.slider.edit', compact('slider'));
+        $slider    = Slider::findOrFail($id);
+        $titleKeys = $this->getAvailableTitleKeys();
+        return view('admin.slider.edit', compact('slider', 'titleKeys'));
     }
 
     public function update(Request $request, string $id)
@@ -59,33 +62,30 @@ class SliderController extends Controller
         $slider = Slider::findOrFail($id);
 
         $request->validate([
-            'title'  => 'required|string|max:255',
-            'url'    => 'nullable|url|max:255',
-            'photo'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status' => 'required|in:0,1',
+            'title'     => 'required|string|max:255',
+            'title_key' => 'nullable|string|max:100',
+            'url'       => 'nullable|url|max:255',
+            'photo'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'status'    => 'required|in:0,1',
         ]);
 
         $photoName = $slider->photo;
-
         if ($request->hasFile('photo')) {
-
-            // Delete old photo
             $oldPath = public_path('uploads/slider/' . $slider->photo);
-            if (file_exists($oldPath) && $slider->photo) {
+            if ($slider->photo && file_exists($oldPath)) {
                 unlink($oldPath);
             }
-
-            // Upload new photo
             $photo     = $request->file('photo');
             $photoName = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
             $photo->move(public_path('uploads/slider'), $photoName);
         }
 
         $slider->update([
-            'title'  => $request->title,
-            'url'    => $request->url,
-            'photo'  => $photoName,
-            'status' => $request->status,
+            'title'     => $request->title,
+            'title_key' => $request->title_key ?? '',
+            'url'       => $request->url,
+            'photo'     => $photoName,
+            'status'    => $request->status,
         ]);
 
         return redirect()->route('slider.index')
@@ -95,16 +95,25 @@ class SliderController extends Controller
     public function destroy(string $id)
     {
         $slider = Slider::findOrFail($id);
-
-        // Delete photo from storage
         $photoPath = public_path('uploads/slider/' . $slider->photo);
-        if (file_exists($photoPath) && $slider->photo) {
+        if ($slider->photo && file_exists($photoPath)) {
             unlink($photoPath);
         }
-
         $slider->delete();
-
         return redirect()->route('slider.index')
             ->with('success', 'Slider deleted successfully.');
+    }
+
+    private function getAvailableTitleKeys(): array
+    {
+        return [
+            'premium_features'      => 'Premium Features',
+            'financial_analysis'    => 'Financial Analysis',
+            'backup_restore'        => 'Backup & Restore',
+            'stock_management'      => 'Stock Management',
+            'income_expense_report' => 'Income-Expense Report',
+            'app_name'              => 'App Name',
+            'tagline'               => 'Tagline',
+        ];
     }
 }
