@@ -6,31 +6,34 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('financemanages', function (Blueprint $table) {
             $table->id();
+
+            // ── Owner ────────────────────────────────────
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+
+            // ── Finance fields ───────────────────────────
             $table->decimal('amount', 15, 2)->default(0);
             $table->enum('type', ['income', 'expense'])->default('expense');
-            $table->unsignedBigInteger('category_id')->nullable();
-            $table->date('date')->nullable();
-            $table->time('time')->nullable();
-            $table->text('description')->nullable();
-            $table->timestamps();
 
+            $table->unsignedBigInteger('category_id')->nullable();
             $table->foreign('category_id')
                   ->references('id')
                   ->on('categories')
                   ->nullOnDelete();
+
+            $table->date('date')->nullable();
+            $table->time('time')->nullable();
+            $table->text('description')->nullable();
+
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('financemanages');

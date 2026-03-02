@@ -113,19 +113,16 @@
             </ul>
         </li>
 
+
+
         <li>
             <a href="javascript:void(0);" class="has-arrow">
                 <div class="parent-icon"><i class="bx bx-category"></i></div>
-                <div class="menu-title">Application</div>
+                <div class="menu-title">Ad Setting</div>
             </a>
             <ul>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Email</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Chat Box</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>File Manager</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Contacts</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Todo List</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Invoice</a></li>
-                <li><a href="#"><i class='bx bx-radio-circle'></i>Calendar</a></li>
+                <li><a href="{{ route('adsetting.index') }}"><i class='bx bx-radio-circle'></i>Ad Setting List</a></li>
+
             </ul>
         </li>
 
