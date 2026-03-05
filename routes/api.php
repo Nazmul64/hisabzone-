@@ -54,6 +54,25 @@ use App\Http\Controllers\Stock\StockReportController;
 use App\Http\Controllers\Stock\StockDashboardController;
 use App\Http\Controllers\Stock\InvoiceSettingsController;
 
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\DealerController;
+use App\Http\Controllers\Api\TailordashboardController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\TailorReportController;
+use App\Http\Controllers\Api\TailorSalaryController;
+use App\Http\Controllers\Api\SalaryHistoryController;
+use App\Http\Controllers\Api\ForgotPasswordController;
+
+
+
+
+
+
+
 // ════════════════════════════════════════════════════════════
 // PUBLIC ROUTES — No authentication required
 // ════════════════════════════════════════════════════════════
@@ -63,12 +82,16 @@ Route::prefix('auth')->group(function () {
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('google/callback', [AuthController::class, 'googleCallback']);
     Route::get('google/redirect',  [AuthController::class, 'googleRedirect']);
+
 });
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOtp']);
+Route::post('/verify-otp',      [ForgotPasswordController::class, 'verifyOtp']);
+Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword']);
 
 // ════════════════════════════════════════════════════════════
 // PROTECTED ROUTES — Requires auth:sanctum
 // ════════════════════════════════════════════════════════════
-Route::middleware('auth:sanctum')->group(function () {
+
 
     // ── Auth ─────────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
@@ -324,4 +347,55 @@ Route::middleware('auth:sanctum')->group(function () {
 
     }); // end prefix('scorehub')
 
-}); // end middleware('auth:sanctum')
+// ── Protected Routes ───────────────────────────────────────────────────────────
+Route::prefix('tailor')->group(function () {
+
+    // Dashboard
+    Route::get('/dashboard',          [TailordashboardController::class, 'index']);
+    Route::get('/dashboard/summary',  [TailordashboardController::class, 'summary']);
+
+    // Customers
+    Route::apiResource('customers', CustomerController::class);
+    Route::get('/customers/{id}/orders', [CustomerController::class, 'orders']);
+
+    // Orders
+    Route::apiResource('orders', OrderController::class);
+    Route::patch('/orders/{id}/status',       [OrderController::class, 'updateStatus']);
+    Route::patch('/orders/{id}/measurements', [OrderController::class, 'updateMeasurements']);
+
+    // Employees
+    Route::apiResource('employees', EmployeeController::class);
+
+    // Inventory
+    Route::apiResource('inventory', InventoryController::class);
+    Route::patch('/inventory/{id}/stock',  [InventoryController::class, 'updateStock']);
+    Route::get('/inventory/low-stock/list',[InventoryController::class, 'lowStock']);
+
+    // Payments
+    Route::apiResource('payments', PaymentController::class);
+    Route::get('/payments/due/orders', [PaymentController::class, 'dueOrders']);
+
+    // Dealers
+    Route::apiResource('dealers', DealerController::class);
+
+    // Reports
+    Route::prefix('reports')->group(function () {
+        Route::get('/summary',  [TailorReportController::class, 'summary']);
+        Route::get('/sales',    [TailorReportController::class, 'sales']);
+        Route::get('/orders',   [TailorReportController::class, 'orders']);
+        Route::get('/customers',[TailorReportController::class, 'customers']);
+        Route::get('/monthly',  [TailorReportController::class, 'monthly']);
+    });
+
+    // Invoice
+    Route::get('/invoice/{orderId}', [InvoiceController::class, 'show']);
+
+    Route::post('/salary/pay',[TailorSalaryController::class, 'pay']);
+    Route::get('/salary/all',[TailorSalaryController::class, 'all']);
+    Route::get('/salary/history/{employeeId}', [TailorSalaryController::class, 'history']);
+    Route::get('/tailor/salary/history/all', [SalaryHistoryController::class, 'allHistory']);
+   Route::get('/tailor/salary/history/{employeeId}', [SalaryHistoryController::class, 'employeeHistory']);
+
+});
+
+ // end middleware('auth:sanctum')
