@@ -37,6 +37,10 @@ use App\Http\Controllers\Api\SamitiMemberController;
 use App\Http\Controllers\Api\SamitiNoticeController;
 use App\Http\Controllers\Api\SamitiProfileController;
 use App\Http\Controllers\Api\SamitiSavingController;
+use App\Http\Controllers\Api\ScoreHistoryController;
+use App\Http\Controllers\Api\ScoreMatchController;
+use App\Http\Controllers\Api\ScorePlayerController;
+use App\Http\Controllers\Api\ScoreTeamController;
 use App\Http\Controllers\Stock\StockProductController;
 use App\Http\Controllers\Stock\StockPartyController;
 use App\Http\Controllers\Stock\SaleInvoiceController;
@@ -174,65 +178,52 @@ Route::middleware('auth:sanctum')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::prefix('samiti')->group(function () {
 
-        // Dashboard
         Route::get('dashboard', [SamitiDashboardController::class, 'summary']);
 
-        // Profile
         Route::get('profile', [SamitiProfileController::class, 'show']);
         Route::put('profile', [SamitiProfileController::class, 'update']);
 
-        // Members
         Route::get('members',         [SamitiMemberController::class, 'index']);
         Route::post('members',        [SamitiMemberController::class, 'store']);
         Route::put('members/{id}',    [SamitiMemberController::class, 'update']);
         Route::delete('members/{id}', [SamitiMemberController::class, 'destroy']);
 
-        // Savings
         Route::get('savings',         [SamitiSavingController::class, 'index']);
         Route::post('savings',        [SamitiSavingController::class, 'store']);
         Route::delete('savings/{id}', [SamitiSavingController::class, 'destroy']);
 
-        // Collections
         Route::get('collections',               [SamitiCollectionController::class, 'index']);
         Route::patch('collections/{id}/toggle', [SamitiCollectionController::class, 'toggle']);
         Route::post('collections/collect-all',  [SamitiCollectionController::class, 'collectAll']);
 
-        // Loans
         Route::get('loans',            [SamitiLoanController::class, 'index']);
         Route::post('loans',           [SamitiLoanController::class, 'store']);
         Route::patch('loans/{id}/pay', [SamitiLoanController::class, 'makePayment']);
         Route::delete('loans/{id}',    [SamitiLoanController::class, 'destroy']);
 
-        // Fund
         Route::get('fund',  [SamitiFundController::class, 'index']);
         Route::post('fund', [SamitiFundController::class, 'store']);
 
-        // Expenses
         Route::get('expenses',         [SamitiExpenseController::class, 'index']);
         Route::post('expenses',        [SamitiExpenseController::class, 'store']);
         Route::delete('expenses/{id}', [SamitiExpenseController::class, 'destroy']);
 
-        // Fines
         Route::get('fines',               [SamitiFineController::class, 'index']);
         Route::post('fines',              [SamitiFineController::class, 'store']);
         Route::patch('fines/{id}/toggle', [SamitiFineController::class, 'toggle']);
         Route::delete('fines/{id}',       [SamitiFineController::class, 'destroy']);
 
-        // Dividends
         Route::get('dividends',                 [SamitiDividendController::class, 'index']);
         Route::post('dividends/calculate',      [SamitiDividendController::class, 'calculate']);
         Route::post('dividends/distribute-all', [SamitiDividendController::class, 'distributeAll']);
         Route::patch('dividends/{id}/toggle',   [SamitiDividendController::class, 'toggle']);
 
-        // Meetings
         Route::get('meetings',  [SamitiMeetingController::class, 'index']);
         Route::post('meetings', [SamitiMeetingController::class, 'store']);
 
-        // Attendance
         Route::get('attendance',               [SamitiAttendanceController::class, 'index']);
         Route::patch('attendance/{id}/toggle', [SamitiAttendanceController::class, 'toggle']);
 
-        // Notices
         Route::get('notices',                [SamitiNoticeController::class, 'index']);
         Route::post('notices',               [SamitiNoticeController::class, 'store']);
         Route::patch('notices/{id}/read',    [SamitiNoticeController::class, 'markRead']);
@@ -246,50 +237,39 @@ Route::middleware('auth:sanctum')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::prefix('stock')->group(function () {
 
-        // Dashboard
         Route::get('dashboard', [StockDashboardController::class, 'index']);
 
-        // Products
         Route::get('products/categories', [StockProductController::class, 'categories']);
         Route::get('products/low-stock',  [StockProductController::class, 'lowStock']);
         Route::apiResource('products',    StockProductController::class);
 
-        // Parties
         Route::get('parties/{id}/ledger', [StockPartyController::class, 'ledger']);
         Route::apiResource('parties',     StockPartyController::class);
 
-        // Sales
         Route::get('sales/next-number', [SaleInvoiceController::class, 'nextNumber']);
         Route::apiResource('sales',     SaleInvoiceController::class);
 
-        // Purchases
         Route::get('purchases/next-number', [PurchaseInvoiceController::class, 'nextNumber']);
         Route::apiResource('purchases',     PurchaseInvoiceController::class);
 
-        // Adjustments
         Route::get('adjustments',         [StockAdjustmentController::class, 'index']);
         Route::post('adjustments',        [StockAdjustmentController::class, 'store']);
         Route::delete('adjustments/{id}', [StockAdjustmentController::class, 'destroy']);
 
-        // Payments
         Route::get('payments',         [StockPaymentController::class, 'index']);
         Route::post('payments',        [StockPaymentController::class, 'store']);
         Route::delete('payments/{id}', [StockPaymentController::class, 'destroy']);
 
-        // Expenses
         Route::apiResource('expenses', StockExpenseController::class)->except(['show']);
 
-        // Sale Returns
         Route::get('sale-returns',         [SaleReturnController::class, 'index']);
         Route::post('sale-returns',        [SaleReturnController::class, 'store']);
         Route::delete('sale-returns/{id}', [SaleReturnController::class, 'destroy']);
 
-        // Purchase Returns
         Route::get('purchase-returns',         [PurchaseReturnController::class, 'index']);
         Route::post('purchase-returns',        [PurchaseReturnController::class, 'store']);
         Route::delete('purchase-returns/{id}', [PurchaseReturnController::class, 'destroy']);
 
-        // Reports
         Route::prefix('reports')->group(function () {
             Route::get('today',   [StockReportController::class, 'today']);
             Route::get('weekly',  [StockReportController::class, 'weekly']);
@@ -298,60 +278,50 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('custom',  [StockReportController::class, 'custom']);
         });
 
-        // Invoice Settings
         Route::get('invoice-settings',  [InvoiceSettingsController::class, 'show']);
         Route::post('invoice-settings', [InvoiceSettingsController::class, 'store']);
         Route::put('invoice-settings',  [InvoiceSettingsController::class, 'update']);
 
     }); // end prefix('stock')
 
+    // ════════════════════════════════════════════════════════
+    // SCOREHUB ROUTES — prefix: /api/scorehub/...
+    // ════════════════════════════════════════════════════════
+    Route::prefix('scorehub')->group(function () {
 
+        // ── ম্যাচ CRUD ──────────────────────────────────────
+        Route::get    ('matches',      [ScoreMatchController::class, 'index']);
+        Route::post   ('matches',      [ScoreMatchController::class, 'store']);
+        Route::get    ('matches/{id}', [ScoreMatchController::class, 'show']);
+        Route::patch  ('matches/{id}', [ScoreMatchController::class, 'update']);
+        Route::delete ('matches/{id}', [ScoreMatchController::class, 'destroy']);
 
-Route::prefix('scorehub')
-    ->middleware('auth:sanctum')
-    ->group(function () {
+        // ── রান গ্রিড ────────────────────────────────────────
+        Route::patch  ('teams/{id}/grid', [ScoreTeamController::class, 'updateGrid']);
 
-    // ──────────────────────────────────────────
-    //  ম্যাচ CRUD
-    // ──────────────────────────────────────────
-    Route::get    ('matches',      [ScoreMatchController::class, 'index']);   // GET  - সব ম্যাচ তালিকা
-    Route::post   ('matches',      [ScoreMatchController::class, 'store']);   // POST - নতুন ম্যাচ (দল auto তৈরি)
-    Route::get    ('matches/{id}', [ScoreMatchController::class, 'show']);    // GET  - একটা ম্যাচের পুরো ডাটা
-    Route::patch  ('matches/{id}', [ScoreMatchController::class, 'update']); // PATCH- ম্যাচ আপডেট
-    Route::delete ('matches/{id}', [ScoreMatchController::class, 'destroy']); // DEL  - ম্যাচ মুছো
+        // ── অতিরিক্ত রান ─────────────────────────────────────
+        Route::post   ('teams/{id}/extras',  [ScoreTeamController::class, 'addExtra']);
+        Route::patch  ('extras/{id}/toggle', [ScoreTeamController::class, 'toggleExtra']);
+        Route::delete ('extras/{id}',        [ScoreTeamController::class, 'deleteExtra']);
 
-    // ──────────────────────────────────────────
-    //  রান গ্রিড
-    // ──────────────────────────────────────────
-    Route::patch  ('teams/{id}/grid',    [ScoreTeamController::class, 'updateGrid']);  // গ্রিড সেভ
+        // ── ওভার ─────────────────────────────────────────────
+        Route::post   ('teams/{id}/overs',  [ScoreTeamController::class, 'addOver']);
+        Route::patch  ('overs/{id}/toggle', [ScoreTeamController::class, 'toggleOver']);
 
-    // ──────────────────────────────────────────
-    //  অতিরিক্ত রান
-    // ──────────────────────────────────────────
-    Route::post   ('teams/{id}/extras',  [ScoreTeamController::class, 'addExtra']);    // যোগ
-    Route::patch  ('extras/{id}/toggle', [ScoreTeamController::class, 'toggleExtra']); // কাটো/ফেরাও
-    Route::delete ('extras/{id}',        [ScoreTeamController::class, 'deleteExtra']); // মুছো
+        // ── বলার ─────────────────────────────────────────────
+        Route::post   ('teams/{id}/bowlers', [ScoreTeamController::class, 'addBowler']);
+        Route::delete ('bowlers/{id}',       [ScoreTeamController::class, 'deleteBowler']);
 
-    // ──────────────────────────────────────────
-    //  ওভার
-    // ──────────────────────────────────────────
-    Route::post   ('teams/{id}/overs',  [ScoreTeamController::class, 'addOver']);    // নতুন ওভার
-    Route::patch  ('overs/{id}/toggle', [ScoreTeamController::class, 'toggleOver']); // শেষ/আনশেষ
+        // ── খেলোয়াড় ──────────────────────────────────────────
+        Route::post   ('teams/{id}/players',         [ScorePlayerController::class, 'store']);
+        Route::delete ('players/{id}',               [ScorePlayerController::class, 'destroy']);
+        Route::patch  ('players/{id}/toggle-out',    [ScorePlayerController::class, 'toggleOut']);
+        Route::post   ('players/{id}/runs',          [ScorePlayerController::class, 'addRun']);
+        Route::delete ('players/{id}/runs/{runIdx}', [ScorePlayerController::class, 'removeRun']);
+        Route::get    ('history',      [ScoreHistoryController::class, 'index']);    // সব ম্যাচ তালিকা
+        Route::get    ('history/{id}', [ScoreHistoryController::class, 'show']);     // ম্যাচ বিস্তারিত
+        Route::delete ('history/{id}', [ScoreHistoryController::class, 'destroy']);  // ম্যাচ মুছো
 
-    // ──────────────────────────────────────────
-    //  বলার
-    // ──────────────────────────────────────────
-    Route::post   ('teams/{id}/bowlers', [ScoreTeamController::class, 'addBowler']);   // যোগ
-    Route::delete ('bowlers/{id}',       [ScoreTeamController::class, 'deleteBowler']); // মুছো
-
-    // ──────────────────────────────────────────
-    //  খেলোয়াড়
-    // ──────────────────────────────────────────
-    Route::post   ('teams/{id}/players',         [ScorePlayerController::class, 'store']);     // যোগ
-    Route::delete ('players/{id}',               [ScorePlayerController::class, 'destroy']);   // মুছো
-    Route::patch  ('players/{id}/toggle-out',    [ScorePlayerController::class, 'toggleOut']); // আউট
-    Route::post   ('players/{id}/runs',          [ScorePlayerController::class, 'addRun']);    // রান যোগ (০ও চলবে)
-    Route::delete ('players/{id}/runs/{runIdx}', [ScorePlayerController::class, 'removeRun']); // রান মুছো
-});
+    }); // end prefix('scorehub')
 
 }); // end middleware('auth:sanctum')
