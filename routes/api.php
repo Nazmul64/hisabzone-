@@ -53,7 +53,6 @@ use App\Http\Controllers\Stock\PurchaseReturnController;
 use App\Http\Controllers\Stock\StockReportController;
 use App\Http\Controllers\Stock\StockDashboardController;
 use App\Http\Controllers\Stock\InvoiceSettingsController;
-
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\PaymentController;
@@ -68,30 +67,28 @@ use App\Http\Controllers\Api\SalaryHistoryController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 
 
-
-
-
-
-
 // ════════════════════════════════════════════════════════════
 // PUBLIC ROUTES — No authentication required
 // ════════════════════════════════════════════════════════════
+
 Route::prefix('auth')->group(function () {
     Route::post('register',        [AuthController::class, 'register']);
     Route::post('login',           [AuthController::class, 'login']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('google/callback', [AuthController::class, 'googleCallback']);
     Route::get('google/redirect',  [AuthController::class, 'googleRedirect']);
-
 });
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOtp']);
-Route::post('/verify-otp',      [ForgotPasswordController::class, 'verifyOtp']);
-Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword']);
+
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendOtp']);
+Route::post('verify-otp',      [ForgotPasswordController::class, 'verifyOtp']);
+Route::post('reset-password',  [ForgotPasswordController::class, 'resetPassword']);
+
 
 // ════════════════════════════════════════════════════════════
 // PROTECTED ROUTES — Requires auth:sanctum
 // ════════════════════════════════════════════════════════════
 
+Route::middleware('auth:sanctum')->group(function () {
 
     // ── Auth ─────────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
@@ -160,10 +157,10 @@ Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword
 
     // ── Multi Account ─────────────────────────────────────────
     Route::prefix('accounts')->group(function () {
-        Route::get('/',        [AccountController::class, 'index']);
-        Route::post('/',       [AccountController::class, 'store']);
-        Route::post('switch',  [AccountController::class, 'switchAccount']);
-        Route::delete('{id}',  [AccountController::class, 'destroy']);
+        Route::get('/',       [AccountController::class, 'index']);
+        Route::post('/',      [AccountController::class, 'store']);
+        Route::post('switch', [AccountController::class, 'switchAccount']);
+        Route::delete('{id}', [AccountController::class, 'destroy']);
     });
 
     // ── PIN Security ──────────────────────────────────────────
@@ -196,8 +193,9 @@ Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword
         Route::get('{id}',        [AdsettingController::class, 'show']);
     });
 
+
     // ════════════════════════════════════════════════════════
-    // SAMITI ROUTES — prefix: /api/samiti/...
+    // SAMITI ROUTES — /api/samiti/...
     // ════════════════════════════════════════════════════════
     Route::prefix('samiti')->group(function () {
 
@@ -206,93 +204,115 @@ Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword
         Route::get('profile', [SamitiProfileController::class, 'show']);
         Route::put('profile', [SamitiProfileController::class, 'update']);
 
+        // Members
         Route::get('members',         [SamitiMemberController::class, 'index']);
         Route::post('members',        [SamitiMemberController::class, 'store']);
         Route::put('members/{id}',    [SamitiMemberController::class, 'update']);
         Route::delete('members/{id}', [SamitiMemberController::class, 'destroy']);
 
+        // Savings
         Route::get('savings',         [SamitiSavingController::class, 'index']);
         Route::post('savings',        [SamitiSavingController::class, 'store']);
         Route::delete('savings/{id}', [SamitiSavingController::class, 'destroy']);
 
+        // Collections — static 'collect-all' BEFORE dynamic {id}
         Route::get('collections',               [SamitiCollectionController::class, 'index']);
-        Route::patch('collections/{id}/toggle', [SamitiCollectionController::class, 'toggle']);
         Route::post('collections/collect-all',  [SamitiCollectionController::class, 'collectAll']);
+        Route::patch('collections/{id}/toggle', [SamitiCollectionController::class, 'toggle']);
 
+        // Loans
         Route::get('loans',            [SamitiLoanController::class, 'index']);
         Route::post('loans',           [SamitiLoanController::class, 'store']);
         Route::patch('loans/{id}/pay', [SamitiLoanController::class, 'makePayment']);
         Route::delete('loans/{id}',    [SamitiLoanController::class, 'destroy']);
 
+        // Fund
         Route::get('fund',  [SamitiFundController::class, 'index']);
         Route::post('fund', [SamitiFundController::class, 'store']);
 
+        // Expenses
         Route::get('expenses',         [SamitiExpenseController::class, 'index']);
         Route::post('expenses',        [SamitiExpenseController::class, 'store']);
         Route::delete('expenses/{id}', [SamitiExpenseController::class, 'destroy']);
 
+        // Fines
         Route::get('fines',               [SamitiFineController::class, 'index']);
         Route::post('fines',              [SamitiFineController::class, 'store']);
         Route::patch('fines/{id}/toggle', [SamitiFineController::class, 'toggle']);
         Route::delete('fines/{id}',       [SamitiFineController::class, 'destroy']);
 
+        // Dividends — static routes BEFORE dynamic {id}
         Route::get('dividends',                 [SamitiDividendController::class, 'index']);
         Route::post('dividends/calculate',      [SamitiDividendController::class, 'calculate']);
         Route::post('dividends/distribute-all', [SamitiDividendController::class, 'distributeAll']);
         Route::patch('dividends/{id}/toggle',   [SamitiDividendController::class, 'toggle']);
 
+        // Meetings
         Route::get('meetings',  [SamitiMeetingController::class, 'index']);
         Route::post('meetings', [SamitiMeetingController::class, 'store']);
 
+        // Attendance
         Route::get('attendance',               [SamitiAttendanceController::class, 'index']);
         Route::patch('attendance/{id}/toggle', [SamitiAttendanceController::class, 'toggle']);
 
+        // Notices — static 'mark-all-read' BEFORE dynamic {id}
         Route::get('notices',                [SamitiNoticeController::class, 'index']);
         Route::post('notices',               [SamitiNoticeController::class, 'store']);
-        Route::patch('notices/{id}/read',    [SamitiNoticeController::class, 'markRead']);
         Route::post('notices/mark-all-read', [SamitiNoticeController::class, 'markAllRead']);
+        Route::patch('notices/{id}/read',    [SamitiNoticeController::class, 'markRead']);
         Route::delete('notices/{id}',        [SamitiNoticeController::class, 'destroy']);
 
-    }); // end prefix('samiti')
+    }); // end samiti
+
 
     // ════════════════════════════════════════════════════════
-    // STOCK ROUTES — prefix: /api/stock/...
+    // STOCK ROUTES — /api/stock/...
     // ════════════════════════════════════════════════════════
     Route::prefix('stock')->group(function () {
 
         Route::get('dashboard', [StockDashboardController::class, 'index']);
 
+        // Products — static routes BEFORE apiResource
         Route::get('products/categories', [StockProductController::class, 'categories']);
         Route::get('products/low-stock',  [StockProductController::class, 'lowStock']);
         Route::apiResource('products',    StockProductController::class);
 
+        // Parties
         Route::get('parties/{id}/ledger', [StockPartyController::class, 'ledger']);
         Route::apiResource('parties',     StockPartyController::class);
 
+        // Sales — static route BEFORE apiResource
         Route::get('sales/next-number', [SaleInvoiceController::class, 'nextNumber']);
         Route::apiResource('sales',     SaleInvoiceController::class);
 
+        // Purchases — static route BEFORE apiResource
         Route::get('purchases/next-number', [PurchaseInvoiceController::class, 'nextNumber']);
         Route::apiResource('purchases',     PurchaseInvoiceController::class);
 
+        // Adjustments
         Route::get('adjustments',         [StockAdjustmentController::class, 'index']);
         Route::post('adjustments',        [StockAdjustmentController::class, 'store']);
         Route::delete('adjustments/{id}', [StockAdjustmentController::class, 'destroy']);
 
+        // Payments
         Route::get('payments',         [StockPaymentController::class, 'index']);
         Route::post('payments',        [StockPaymentController::class, 'store']);
         Route::delete('payments/{id}', [StockPaymentController::class, 'destroy']);
 
+        // Expenses
         Route::apiResource('expenses', StockExpenseController::class)->except(['show']);
 
+        // Sale Returns
         Route::get('sale-returns',         [SaleReturnController::class, 'index']);
         Route::post('sale-returns',        [SaleReturnController::class, 'store']);
         Route::delete('sale-returns/{id}', [SaleReturnController::class, 'destroy']);
 
+        // Purchase Returns
         Route::get('purchase-returns',         [PurchaseReturnController::class, 'index']);
         Route::post('purchase-returns',        [PurchaseReturnController::class, 'store']);
         Route::delete('purchase-returns/{id}', [PurchaseReturnController::class, 'destroy']);
 
+        // Reports
         Route::prefix('reports')->group(function () {
             Route::get('today',   [StockReportController::class, 'today']);
             Route::get('weekly',  [StockReportController::class, 'weekly']);
@@ -301,101 +321,111 @@ Route::post('/reset-password',  [ForgotPasswordController::class, 'resetPassword
             Route::get('custom',  [StockReportController::class, 'custom']);
         });
 
+        // Invoice Settings
         Route::get('invoice-settings',  [InvoiceSettingsController::class, 'show']);
         Route::post('invoice-settings', [InvoiceSettingsController::class, 'store']);
         Route::put('invoice-settings',  [InvoiceSettingsController::class, 'update']);
 
-    }); // end prefix('stock')
+    }); // end stock
+
 
     // ════════════════════════════════════════════════════════
-    // SCOREHUB ROUTES — prefix: /api/scorehub/...
+    // SCOREHUB ROUTES — /api/scorehub/...
     // ════════════════════════════════════════════════════════
     Route::prefix('scorehub')->group(function () {
 
-        // ── ম্যাচ CRUD ──────────────────────────────────────
-        Route::get    ('matches',      [ScoreMatchController::class, 'index']);
-        Route::post   ('matches',      [ScoreMatchController::class, 'store']);
-        Route::get    ('matches/{id}', [ScoreMatchController::class, 'show']);
-        Route::patch  ('matches/{id}', [ScoreMatchController::class, 'update']);
-        Route::delete ('matches/{id}', [ScoreMatchController::class, 'destroy']);
+        // Matches
+        Route::get('matches',         [ScoreMatchController::class, 'index']);
+        Route::post('matches',        [ScoreMatchController::class, 'store']);
+        Route::get('matches/{id}',    [ScoreMatchController::class, 'show']);
+        Route::patch('matches/{id}',  [ScoreMatchController::class, 'update']);
+        Route::delete('matches/{id}', [ScoreMatchController::class, 'destroy']);
 
-        // ── রান গ্রিড ────────────────────────────────────────
-        Route::patch  ('teams/{id}/grid', [ScoreTeamController::class, 'updateGrid']);
+        // Run Grid
+        Route::patch('teams/{id}/grid', [ScoreTeamController::class, 'updateGrid']);
 
-        // ── অতিরিক্ত রান ─────────────────────────────────────
-        Route::post   ('teams/{id}/extras',  [ScoreTeamController::class, 'addExtra']);
-        Route::patch  ('extras/{id}/toggle', [ScoreTeamController::class, 'toggleExtra']);
-        Route::delete ('extras/{id}',        [ScoreTeamController::class, 'deleteExtra']);
+        // Extras
+        Route::post('teams/{id}/extras',   [ScoreTeamController::class, 'addExtra']);
+        Route::patch('extras/{id}/toggle', [ScoreTeamController::class, 'toggleExtra']);
+        Route::delete('extras/{id}',       [ScoreTeamController::class, 'deleteExtra']);
 
-        // ── ওভার ─────────────────────────────────────────────
-        Route::post   ('teams/{id}/overs',  [ScoreTeamController::class, 'addOver']);
-        Route::patch  ('overs/{id}/toggle', [ScoreTeamController::class, 'toggleOver']);
+        // Overs
+        Route::post('teams/{id}/overs',   [ScoreTeamController::class, 'addOver']);
+        Route::patch('overs/{id}/toggle', [ScoreTeamController::class, 'toggleOver']);
 
-        // ── বলার ─────────────────────────────────────────────
-        Route::post   ('teams/{id}/bowlers', [ScoreTeamController::class, 'addBowler']);
-        Route::delete ('bowlers/{id}',       [ScoreTeamController::class, 'deleteBowler']);
+        // Bowlers
+        Route::post('teams/{id}/bowlers', [ScoreTeamController::class, 'addBowler']);
+        Route::delete('bowlers/{id}',     [ScoreTeamController::class, 'deleteBowler']);
 
-        // ── খেলোয়াড় ──────────────────────────────────────────
-        Route::post   ('teams/{id}/players',         [ScorePlayerController::class, 'store']);
-        Route::delete ('players/{id}',               [ScorePlayerController::class, 'destroy']);
-        Route::patch  ('players/{id}/toggle-out',    [ScorePlayerController::class, 'toggleOut']);
-        Route::post   ('players/{id}/runs',          [ScorePlayerController::class, 'addRun']);
-        Route::delete ('players/{id}/runs/{runIdx}', [ScorePlayerController::class, 'removeRun']);
-        Route::get    ('history',      [ScoreHistoryController::class, 'index']);    // সব ম্যাচ তালিকা
-        Route::get    ('history/{id}', [ScoreHistoryController::class, 'show']);     // ম্যাচ বিস্তারিত
-        Route::delete ('history/{id}', [ScoreHistoryController::class, 'destroy']);  // ম্যাচ মুছো
+        // Players
+        Route::post('teams/{id}/players',           [ScorePlayerController::class, 'store']);
+        Route::delete('players/{id}',               [ScorePlayerController::class, 'destroy']);
+        Route::patch('players/{id}/toggle-out',     [ScorePlayerController::class, 'toggleOut']);
+        Route::post('players/{id}/runs',            [ScorePlayerController::class, 'addRun']);
+        Route::delete('players/{id}/runs/{runIdx}', [ScorePlayerController::class, 'removeRun']);
 
-    }); // end prefix('scorehub')
+        // History
+        Route::get('history',         [ScoreHistoryController::class, 'index']);
+        Route::get('history/{id}',    [ScoreHistoryController::class, 'show']);
+        Route::delete('history/{id}', [ScoreHistoryController::class, 'destroy']);
 
-// ── Protected Routes ───────────────────────────────────────────────────────────
-Route::prefix('tailor')->group(function () {
+    }); // end scorehub
 
-    // Dashboard
-    Route::get('/dashboard',          [TailordashboardController::class, 'index']);
-    Route::get('/dashboard/summary',  [TailordashboardController::class, 'summary']);
 
-    // Customers
-    Route::apiResource('customers', CustomerController::class);
-    Route::get('/customers/{id}/orders', [CustomerController::class, 'orders']);
+    // ════════════════════════════════════════════════════════
+    // TAILOR ROUTES — /api/tailor/...
+    // ════════════════════════════════════════════════════════
+    Route::prefix('tailor')->group(function () {
 
-    // Orders
-    Route::apiResource('orders', OrderController::class);
-    Route::patch('/orders/{id}/status',       [OrderController::class, 'updateStatus']);
-    Route::patch('/orders/{id}/measurements', [OrderController::class, 'updateMeasurements']);
+        // Dashboard
+        Route::get('dashboard',         [TailordashboardController::class, 'index']);
+        Route::get('dashboard/summary', [TailordashboardController::class, 'summary']);
 
-    // Employees
-    Route::apiResource('employees', EmployeeController::class);
+        // Customers
+        Route::apiResource('customers', CustomerController::class);
+        Route::get('customers/{id}/orders', [CustomerController::class, 'orders']);
 
-    // Inventory
-    Route::apiResource('inventory', InventoryController::class);
-    Route::patch('/inventory/{id}/stock',  [InventoryController::class, 'updateStock']);
-    Route::get('/inventory/low-stock/list',[InventoryController::class, 'lowStock']);
+        // Orders
+        Route::apiResource('orders', OrderController::class);
+        Route::patch('orders/{id}/status',       [OrderController::class, 'updateStatus']);
+        Route::patch('orders/{id}/measurements', [OrderController::class, 'updateMeasurements']);
 
-    // Payments
-    Route::apiResource('payments', PaymentController::class);
-    Route::get('/payments/due/orders', [PaymentController::class, 'dueOrders']);
+        // Employees
+        Route::apiResource('employees', EmployeeController::class);
 
-    // Dealers
-    Route::apiResource('dealers', DealerController::class);
+        // Inventory — static 'low-stock/list' BEFORE apiResource
+        Route::get('inventory/low-stock/list', [InventoryController::class, 'lowStock']);
+        Route::apiResource('inventory',        InventoryController::class);
+        Route::patch('inventory/{id}/stock',   [InventoryController::class, 'updateStock']);
 
-    // Reports
-    Route::prefix('reports')->group(function () {
-        Route::get('/summary',  [TailorReportController::class, 'summary']);
-        Route::get('/sales',    [TailorReportController::class, 'sales']);
-        Route::get('/orders',   [TailorReportController::class, 'orders']);
-        Route::get('/customers',[TailorReportController::class, 'customers']);
-        Route::get('/monthly',  [TailorReportController::class, 'monthly']);
-    });
+        // Payments — static 'due/orders' BEFORE apiResource
+        Route::get('payments/due/orders', [PaymentController::class, 'dueOrders']);
+        Route::apiResource('payments',    PaymentController::class);
 
-    // Invoice
-    Route::get('/invoice/{orderId}', [InvoiceController::class, 'show']);
+        // Dealers
+        Route::apiResource('dealers', DealerController::class);
 
-    Route::post('/salary/pay',[TailorSalaryController::class, 'pay']);
-    Route::get('/salary/all',[TailorSalaryController::class, 'all']);
-    Route::get('/salary/history/{employeeId}', [TailorSalaryController::class, 'history']);
-    Route::get('/tailor/salary/history/all', [SalaryHistoryController::class, 'allHistory']);
-   Route::get('/tailor/salary/history/{employeeId}', [SalaryHistoryController::class, 'employeeHistory']);
+        // Reports
+        Route::prefix('reports')->group(function () {
+            Route::get('summary',   [TailorReportController::class, 'summary']);
+            Route::get('sales',     [TailorReportController::class, 'sales']);
+            Route::get('orders',    [TailorReportController::class, 'orders']);
+            Route::get('customers', [TailorReportController::class, 'customers']);
+            Route::get('monthly',   [TailorReportController::class, 'monthly']);
+        });
 
-});
+        // Invoice
+        Route::get('invoice/{orderId}', [InvoiceController::class, 'show']);
 
- // end middleware('auth:sanctum')
+        // Salary — static routes BEFORE dynamic {employeeId}
+        Route::post('salary/pay',                 [TailorSalaryController::class, 'pay']);
+        Route::get('salary/all',                  [TailorSalaryController::class, 'all']);
+        Route::get('salary/history/{employeeId}', [TailorSalaryController::class, 'history']);
+
+        // Salary History
+        Route::get('salary-history/all',          [SalaryHistoryController::class, 'allHistory']);
+        Route::get('salary-history/{employeeId}', [SalaryHistoryController::class, 'employeeHistory']);
+
+    }); // end tailor
+
+}); // end middleware('auth:sanctum')
