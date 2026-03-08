@@ -25,33 +25,40 @@ class Adsetting extends Model
     ];
 
     // ════════════════════════════════════════════════
-    // Supported Ad Types
+    // Supported Ad Types  ← key => label
     // ════════════════════════════════════════════════
     public static function adTypes(): array
     {
         return [
-            'banner',
-            'interstitial',
-            'rewarded',
-            'rewarded_interstitial',
-            'native_advanced',
-            'app_open',
+            'banner'                => 'Banner',
+            'interstitial'          => 'Interstitial',
+            'rewarded'              => 'Rewarded',
+            'rewarded_interstitial' => 'Rewarded Interstitial (Beta)',
+            'native_advanced'       => 'Native Advanced',
+            'app_open'              => 'App Open',
         ];
     }
 
     // ════════════════════════════════════════════════
-    // Supported Trigger Options (🔥 Missing Method Fixed)
+    // Supported Trigger Options  ← key => label
     // ════════════════════════════════════════════════
     public static function triggerOptions(): array
     {
         return [
-            'app_start',
-            'app_resume',
-            'screen_open',
-            'button_click',
-            'after_action',
-            'custom',
+            'app_open'        => 'App Open / Launch',
+            'level_complete'  => 'Level Complete',
+            'every_x_actions' => 'Every X Actions',
+            'page_change'     => 'Page / Screen Change',
+            'manual'          => 'Manual (Code-controlled)',
         ];
+    }
+
+    // ════════════════════════════════════════════════
+    // Accessor: Human-readable ad type label
+    // ════════════════════════════════════════════════
+    public function getAdTypeLabelAttribute(): string
+    {
+        return static::adTypes()[$this->ad_type] ?? $this->ad_type;
     }
 
     // ════════════════════════════════════════════════

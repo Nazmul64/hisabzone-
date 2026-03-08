@@ -65,12 +65,12 @@ use App\Http\Controllers\Api\TailorReportController;
 use App\Http\Controllers\Api\TailorSalaryController;
 use App\Http\Controllers\Api\SalaryHistoryController;
 use App\Http\Controllers\Api\ForgotPasswordController;
-
+use App\Http\Controllers\Api\SettingController;
 
 // ════════════════════════════════════════════════════════════
 // PUBLIC ROUTES — No authentication required
 // ════════════════════════════════════════════════════════════
-
+Route::get('setting', [SettingController::class, 'index']);
 Route::prefix('auth')->group(function () {
     Route::post('register',        [AuthController::class, 'register']);
     Route::post('login',           [AuthController::class, 'login']);
@@ -82,7 +82,6 @@ Route::prefix('auth')->group(function () {
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendOtp']);
 Route::post('verify-otp',      [ForgotPasswordController::class, 'verifyOtp']);
 Route::post('reset-password',  [ForgotPasswordController::class, 'resetPassword']);
-
 
 // ════════════════════════════════════════════════════════════
 // PROTECTED ROUTES — Requires auth:sanctum

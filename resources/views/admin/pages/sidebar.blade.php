@@ -125,7 +125,16 @@
 
             </ul>
         </li>
+             <li>
+            <a href="javascript:void(0);" class="has-arrow">
+                <div class="parent-icon"><i class="bx bx-category"></i></div>
+                <div class="menu-title">Settings</div>
+            </a>
+            <ul>
+                <li><a href="{{ route('settings.index') }}"><i class='bx bx-radio-circle'></i>Settings List</a></li>
 
+            </ul>
+        </li>
     </ul>
 
 </div>

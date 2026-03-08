@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Adminauthcontroller;
 use App\Http\Controllers\Admin\Admincontroller;
 use App\Http\Controllers\Admin\AdsettingController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SliderController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,8 @@ Route::middleware(['admin'])->group(function () {
     Route::resource('slider', SliderController::class);
     Route::get('adsetting/active-ads', [AdsettingController::class, 'activeAds']);
     Route::resource('adsetting', AdsettingController::class);
+    Route::resource('settings',SettingController::class);
+
 });
 
 
