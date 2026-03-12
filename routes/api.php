@@ -24,6 +24,25 @@ use App\Http\Controllers\Api\ReportSettingController;
 use App\Http\Controllers\Api\ThemeSettingController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\AdsettingController;
+use App\Http\Controllers\Api\ForgotPasswordController;
+use App\Http\Controllers\Api\SettingController;
+
+// ── Brickkiln Controllers ─────────────────────────────────────
+use App\Http\Controllers\Api\BrickkilnExpenseController;
+use App\Http\Controllers\Api\BrickkilnInventoryController;
+use App\Http\Controllers\Api\BrickkilnReportController;
+use App\Http\Controllers\Api\BrickkilnSalaryController;
+use App\Http\Controllers\Api\BrickkilnSaleController;
+use App\Http\Controllers\Api\BrickkilnsCustomerController;
+use App\Http\Controllers\Api\BrickkilnsDashboardController;
+use App\Http\Controllers\Api\BrickkilnsEmployeeController;
+use App\Http\Controllers\Api\BrickkilnsRawMaterialController;
+use App\Http\Controllers\Api\BrickkilnSupplierController;
+use App\Http\Controllers\Api\BrickkilnsWorkerController;
+use App\Http\Controllers\Api\BrickkilnTransportController;
+use App\Http\Controllers\Api\BrickProductionController;
+
+// ── Samiti Controllers ───────────────────────────────────────
 use App\Http\Controllers\Api\SamitiAttendanceController;
 use App\Http\Controllers\Api\SamitiCollectionController;
 use App\Http\Controllers\Api\SamitiDashboardController;
@@ -37,10 +56,14 @@ use App\Http\Controllers\Api\SamitiMemberController;
 use App\Http\Controllers\Api\SamitiNoticeController;
 use App\Http\Controllers\Api\SamitiProfileController;
 use App\Http\Controllers\Api\SamitiSavingController;
+
+// ── ScoreHub Controllers ─────────────────────────────────────
 use App\Http\Controllers\Api\ScoreHistoryController;
 use App\Http\Controllers\Api\ScoreMatchController;
 use App\Http\Controllers\Api\ScorePlayerController;
 use App\Http\Controllers\Api\ScoreTeamController;
+
+// ── Stock Controllers ────────────────────────────────────────
 use App\Http\Controllers\Stock\StockProductController;
 use App\Http\Controllers\Stock\StockPartyController;
 use App\Http\Controllers\Stock\SaleInvoiceController;
@@ -53,6 +76,8 @@ use App\Http\Controllers\Stock\PurchaseReturnController;
 use App\Http\Controllers\Stock\StockReportController;
 use App\Http\Controllers\Stock\StockDashboardController;
 use App\Http\Controllers\Stock\InvoiceSettingsController;
+
+// ── Tailor Controllers ───────────────────────────────────────
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\PaymentController;
@@ -64,13 +89,16 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\TailorReportController;
 use App\Http\Controllers\Api\TailorSalaryController;
 use App\Http\Controllers\Api\SalaryHistoryController;
-use App\Http\Controllers\Api\ForgotPasswordController;
-use App\Http\Controllers\Api\SettingController;
+
 
 // ════════════════════════════════════════════════════════════
-// PUBLIC ROUTES — No authentication required
+// PUBLIC ROUTES — Authentication required নেই
 // ════════════════════════════════════════════════════════════
+
+// App Settings
 Route::get('setting', [SettingController::class, 'index']);
+
+// Auth — Login, Register, Google
 Route::prefix('auth')->group(function () {
     Route::post('register',        [AuthController::class, 'register']);
     Route::post('login',           [AuthController::class, 'login']);
@@ -79,31 +107,41 @@ Route::prefix('auth')->group(function () {
     Route::get('google/redirect',  [AuthController::class, 'googleRedirect']);
 });
 
+// Forgot Password OTP Flow
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendOtp']);
 Route::post('verify-otp',      [ForgotPasswordController::class, 'verifyOtp']);
 Route::post('reset-password',  [ForgotPasswordController::class, 'resetPassword']);
 
+
 // ════════════════════════════════════════════════════════════
-// PROTECTED ROUTES — Requires auth:sanctum
+// PROTECTED ROUTES — auth:sanctum required
 // ════════════════════════════════════════════════════════════
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ── Auth ─────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════
+    // AUTH
+    // ════════════════════════════════════════════════════════
     Route::prefix('auth')->group(function () {
         Route::get('me',          [AuthController::class, 'me']);
         Route::post('logout',     [AuthController::class, 'logout']);
         Route::post('logout-all', [AuthController::class, 'logoutAll']);
     });
 
-    // ── Slider ───────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════
+    // GENERAL
+    // ════════════════════════════════════════════════════════
+
+    // Slider
     Route::get('slider', [SliderController::class, 'index']);
 
-    // ── Categories & Finance ─────────────────────────────────
-    Route::apiResource('categories',     CategoryController::class);
+    // Categories
+    Route::apiResource('categories', CategoryController::class);
+
+    // Finance Transactions
     Route::apiResource('financemanages', FinancemanageController::class);
 
-    // ── Finance History ──────────────────────────────────────
+    // Finance History
     Route::prefix('finance')->group(function () {
         Route::get('summary',          [FinanceHistoryController::class, 'summary']);
         Route::get('history',          [FinanceHistoryController::class, 'history']);
@@ -112,13 +150,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('category-summary', [FinanceHistoryController::class, 'categorySummary']);
     });
 
-    // ── Dashboard ─────────────────────────────────────────────
+    // Dashboard
     Route::prefix('dashboard')->group(function () {
         Route::get('summary',             [DashboardController::class, 'summary']);
         Route::get('recent-transactions', [DashboardController::class, 'recentTransactions']);
     });
 
-    // ── Reports ───────────────────────────────────────────────
+    // Reports
     Route::prefix('reports')->group(function () {
         Route::get('monthly', [ReportController::class, 'monthly']);
         Route::get('annual',  [ReportController::class, 'annual']);
@@ -126,35 +164,35 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('graph',   [ReportController::class, 'graph']);
     });
 
-    // ── Budget ────────────────────────────────────────────────
+    // Budgets
     Route::apiResource('budgets', BudgetController::class)->only(['index', 'store', 'destroy']);
 
-    // ── Savings ───────────────────────────────────────────────
+    // Savings
     Route::apiResource('savings', SavingController::class)->except(['show']);
 
-    // ── Wallets ───────────────────────────────────────────────
+    // Wallets
     Route::apiResource('wallets', WalletController::class)->except(['show']);
 
-    // ── Debt Records ──────────────────────────────────────────
+    // Debt Records
+    Route::patch('debt-records/{id}/settle', [DebtRecordController::class, 'settle']); // ⚠️ static আগে
     Route::apiResource('debt-records', DebtRecordController::class)->except(['show']);
-    Route::patch('debt-records/{id}/settle', [DebtRecordController::class, 'settle']);
 
-    // ── Tasks ─────────────────────────────────────────────────
+    // Tasks
+    Route::patch('tasks/{id}/toggle-done', [TaskController::class, 'toggleDone']); // ⚠️ static আগে
     Route::apiResource('tasks', TaskController::class)->except(['show']);
-    Route::patch('tasks/{id}/toggle-done', [TaskController::class, 'toggleDone']);
 
-    // ── Ad-Free ───────────────────────────────────────────────
+    // Ad-Free
     Route::prefix('ad-free')->group(function () {
         Route::get('status',        [AdFreeController::class, 'status']);
         Route::post('activate',     [AdFreeController::class, 'activate']);
         Route::delete('deactivate', [AdFreeController::class, 'deactivate']);
     });
 
-    // ── Currency ──────────────────────────────────────────────
+    // Currency
     Route::get('currencies',         [CurrencyController::class, 'index']);
     Route::post('currencies/select', [CurrencyController::class, 'select']);
 
-    // ── Multi Account ─────────────────────────────────────────
+    // Multi Account
     Route::prefix('accounts')->group(function () {
         Route::get('/',       [AccountController::class, 'index']);
         Route::post('/',      [AccountController::class, 'store']);
@@ -162,7 +200,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{id}', [AccountController::class, 'destroy']);
     });
 
-    // ── PIN Security ──────────────────────────────────────────
+    // PIN Security
     Route::prefix('pin')->group(function () {
         Route::get('status',  [PinController::class, 'status']);
         Route::post('set',    [PinController::class, 'setPin']);
@@ -171,21 +209,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/',    [PinController::class, 'removePin']);
     });
 
-    // ── Report Settings ───────────────────────────────────────
+    // Report Settings
     Route::get('report-settings',  [ReportSettingController::class, 'index']);
     Route::post('report-settings', [ReportSettingController::class, 'store']);
 
-    // ── Theme Settings ────────────────────────────────────────
+    // Theme Settings
     Route::prefix('settings')->group(function () {
         Route::get('theme',  [ThemeSettingController::class, 'index']);
         Route::post('theme', [ThemeSettingController::class, 'store']);
     });
 
-    // ── Profile ───────────────────────────────────────────────
+    // Profile
     Route::get('profile',  [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);
 
-    // ── Ad Settings ───────────────────────────────────────────
+    // Ad Settings
     Route::prefix('adsetting')->group(function () {
         Route::get('/',           [AdsettingController::class, 'index']);
         Route::get('type/{type}', [AdsettingController::class, 'getByType']);
@@ -194,12 +232,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ════════════════════════════════════════════════════════
-    // SAMITI ROUTES — /api/samiti/...
+    // SAMITI — /api/samiti/...
     // ════════════════════════════════════════════════════════
     Route::prefix('samiti')->group(function () {
 
         Route::get('dashboard', [SamitiDashboardController::class, 'summary']);
 
+        // Profile
         Route::get('profile', [SamitiProfileController::class, 'show']);
         Route::put('profile', [SamitiProfileController::class, 'update']);
 
@@ -214,7 +253,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('savings',        [SamitiSavingController::class, 'store']);
         Route::delete('savings/{id}', [SamitiSavingController::class, 'destroy']);
 
-        // Collections — static 'collect-all' BEFORE dynamic {id}
+        // Collections — ⚠️ static 'collect-all' BEFORE dynamic {id}
         Route::get('collections',               [SamitiCollectionController::class, 'index']);
         Route::post('collections/collect-all',  [SamitiCollectionController::class, 'collectAll']);
         Route::patch('collections/{id}/toggle', [SamitiCollectionController::class, 'toggle']);
@@ -240,7 +279,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('fines/{id}/toggle', [SamitiFineController::class, 'toggle']);
         Route::delete('fines/{id}',       [SamitiFineController::class, 'destroy']);
 
-        // Dividends — static routes BEFORE dynamic {id}
+        // Dividends — ⚠️ static routes BEFORE dynamic {id}
         Route::get('dividends',                 [SamitiDividendController::class, 'index']);
         Route::post('dividends/calculate',      [SamitiDividendController::class, 'calculate']);
         Route::post('dividends/distribute-all', [SamitiDividendController::class, 'distributeAll']);
@@ -254,7 +293,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('attendance',               [SamitiAttendanceController::class, 'index']);
         Route::patch('attendance/{id}/toggle', [SamitiAttendanceController::class, 'toggle']);
 
-        // Notices — static 'mark-all-read' BEFORE dynamic {id}
+        // Notices — ⚠️ static 'mark-all-read' BEFORE dynamic {id}
         Route::get('notices',                [SamitiNoticeController::class, 'index']);
         Route::post('notices',               [SamitiNoticeController::class, 'store']);
         Route::post('notices/mark-all-read', [SamitiNoticeController::class, 'markAllRead']);
@@ -265,26 +304,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ════════════════════════════════════════════════════════
-    // STOCK ROUTES — /api/stock/...
+    // STOCK — /api/stock/...
     // ════════════════════════════════════════════════════════
     Route::prefix('stock')->group(function () {
 
+        // Dashboard
         Route::get('dashboard', [StockDashboardController::class, 'index']);
 
-        // Products — static routes BEFORE apiResource
+        // Products — ⚠️ static routes BEFORE apiResource
         Route::get('products/categories', [StockProductController::class, 'categories']);
         Route::get('products/low-stock',  [StockProductController::class, 'lowStock']);
         Route::apiResource('products',    StockProductController::class);
 
-        // Parties
+        // Parties — ⚠️ ledger BEFORE apiResource
         Route::get('parties/{id}/ledger', [StockPartyController::class, 'ledger']);
         Route::apiResource('parties',     StockPartyController::class);
 
-        // Sales — static route BEFORE apiResource
+        // Sales — ⚠️ next-number BEFORE apiResource
         Route::get('sales/next-number', [SaleInvoiceController::class, 'nextNumber']);
         Route::apiResource('sales',     SaleInvoiceController::class);
 
-        // Purchases — static route BEFORE apiResource
+        // Purchases — ⚠️ next-number BEFORE apiResource
         Route::get('purchases/next-number', [PurchaseInvoiceController::class, 'nextNumber']);
         Route::apiResource('purchases',     PurchaseInvoiceController::class);
 
@@ -329,7 +369,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ════════════════════════════════════════════════════════
-    // SCOREHUB ROUTES — /api/scorehub/...
+    // SCOREHUB — /api/scorehub/...
     // ════════════════════════════════════════════════════════
     Route::prefix('scorehub')->group(function () {
 
@@ -372,7 +412,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ════════════════════════════════════════════════════════
-    // TAILOR ROUTES — /api/tailor/...
+    // TAILOR — /api/tailor/...
     // ════════════════════════════════════════════════════════
     Route::prefix('tailor')->group(function () {
 
@@ -381,23 +421,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('dashboard/summary', [TailordashboardController::class, 'summary']);
 
         // Customers
+        Route::get('customers/{id}/orders', [CustomerController::class, 'orders']); // ⚠️ static আগে
         Route::apiResource('customers', CustomerController::class);
-        Route::get('customers/{id}/orders', [CustomerController::class, 'orders']);
 
         // Orders
+        Route::patch('orders/{id}/status',       [OrderController::class, 'updateStatus']);       // ⚠️ static আগে
+        Route::patch('orders/{id}/measurements', [OrderController::class, 'updateMeasurements']); // ⚠️ static আগে
         Route::apiResource('orders', OrderController::class);
-        Route::patch('orders/{id}/status',       [OrderController::class, 'updateStatus']);
-        Route::patch('orders/{id}/measurements', [OrderController::class, 'updateMeasurements']);
 
         // Employees
         Route::apiResource('employees', EmployeeController::class);
 
-        // Inventory — static 'low-stock/list' BEFORE apiResource
+        // Inventory — ⚠️ static 'low-stock/list' BEFORE apiResource
         Route::get('inventory/low-stock/list', [InventoryController::class, 'lowStock']);
-        Route::apiResource('inventory',        InventoryController::class);
         Route::patch('inventory/{id}/stock',   [InventoryController::class, 'updateStock']);
+        Route::apiResource('inventory',        InventoryController::class);
 
-        // Payments — static 'due/orders' BEFORE apiResource
+        // Payments — ⚠️ static 'due/orders' BEFORE apiResource
         Route::get('payments/due/orders', [PaymentController::class, 'dueOrders']);
         Route::apiResource('payments',    PaymentController::class);
 
@@ -416,7 +456,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Invoice
         Route::get('invoice/{orderId}', [InvoiceController::class, 'show']);
 
-        // Salary — static routes BEFORE dynamic {employeeId}
+        // Salary — ⚠️ static routes BEFORE dynamic {employeeId}
         Route::post('salary/pay',                 [TailorSalaryController::class, 'pay']);
         Route::get('salary/all',                  [TailorSalaryController::class, 'all']);
         Route::get('salary/history/{employeeId}', [TailorSalaryController::class, 'history']);
@@ -426,5 +466,67 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('salary-history/{employeeId}', [SalaryHistoryController::class, 'employeeHistory']);
 
     }); // end tailor
+
+
+    // ════════════════════════════════════════════════════════
+    // BRICKKILNS — /api/brickkilns/...
+    // ════════════════════════════════════════════════════════
+    Route::prefix('brickkilns')->group(function () {
+
+        // Dashboard
+        Route::get('brickkilnsdashboard', [BrickkilnsDashboardController::class, 'index']);
+
+        // Workers
+        Route::apiResource('workers', BrickkilnsWorkerController::class);
+
+        // Employees
+        Route::apiResource('employees', BrickkilnsEmployeeController::class);
+
+        // Brick Productions
+        Route::apiResource('productions', BrickProductionController::class);
+
+        // Raw Materials — ⚠️ custom routes AFTER apiResource won't conflict
+        Route::post('raw-materials/{rawMaterial}/purchase', [BrickkilnsRawMaterialController::class, 'purchase']);
+        Route::patch('raw-materials/{rawMaterial}/use',     [BrickkilnsRawMaterialController::class, 'use']);
+        Route::apiResource('raw-materials', BrickkilnsRawMaterialController::class);
+
+        // Customers
+        Route::patch('customers/{customer}/collect', [BrickkilnsCustomerController::class, 'collectDue']);
+        Route::apiResource('customers', BrickkilnsCustomerController::class);
+
+        // Suppliers
+        Route::apiResource('suppliers', BrickkilnSupplierController::class);
+
+        // Sales
+        Route::patch('sales/{sale}/pay', [BrickkilnSaleController::class, 'pay']);
+        Route::apiResource('sales', BrickkilnSaleController::class);
+
+        // Inventory — ⚠️ static 'sync' BEFORE dynamic {inventory}
+        Route::get('inventory/sync',        [BrickkilnInventoryController::class, 'sync']);
+        Route::get('inventory',             [BrickkilnInventoryController::class, 'index']);
+        Route::put('inventory/{inventory}', [BrickkilnInventoryController::class, 'update']);
+
+        // Expenses — ⚠️ static 'expense-categories' outside prefix
+        Route::get('expense-categories', [BrickkilnExpenseController::class, 'categories']);
+        Route::apiResource('expenses', BrickkilnExpenseController::class)->except(['show']);
+
+        // Salaries — ⚠️ static 'generate' BEFORE apiResource
+        Route::post('salaries/generate',      [BrickkilnSalaryController::class, 'generate']);
+        Route::patch('salaries/{salary}/pay', [BrickkilnSalaryController::class, 'pay']);
+        Route::apiResource('salaries', BrickkilnSalaryController::class)->except(['show']);
+
+        // Transports
+        Route::patch('transports/{transport}/status', [BrickkilnTransportController::class, 'updateStatus']);
+        Route::apiResource('transports', BrickkilnTransportController::class);
+
+        // Reports
+        Route::prefix('reports')->group(function () {
+            Route::get('daily-production', [BrickkilnReportController::class, 'dailyProduction']);
+            Route::get('monthly-sales',    [BrickkilnReportController::class, 'monthlySales']);
+            Route::get('profit-loss',      [BrickkilnReportController::class, 'profitLoss']);
+            Route::get('stock-summary',    [BrickkilnReportController::class, 'stockSummary']);
+        });
+
+    }); // end brickkilns
 
 }); // end middleware('auth:sanctum')

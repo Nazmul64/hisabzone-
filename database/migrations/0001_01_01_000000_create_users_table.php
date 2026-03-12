@@ -8,16 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ── users ──────────────────────────────────────────────────────
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone', 20)->nullable();  // ✅ after() সরানো হয়েছে
+            $table->string('phone', 20)->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable(); // nullable → Google OAuth এ password নাও থাকতে পারে
             $table->enum('role', ['admin', 'user'])->default('user');
 
-            // ── Google OAuth fields ──
+            // ── Google OAuth ───────────────────────────────────────────
             $table->string('google_id')->nullable()->unique();
             $table->string('avatar')->nullable();
 
@@ -25,12 +26,14 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // ── password_reset_tokens ──────────────────────────────────────
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        // ── sessions ───────────────────────────────────────────────────
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();
@@ -43,8 +46,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };
