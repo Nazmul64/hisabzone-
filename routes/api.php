@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// ── Controllers ──────────────────────────────────────────────
+// ── General Controllers ──────────────────────────────────────
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\CategoryController;
@@ -90,6 +90,19 @@ use App\Http\Controllers\Api\TailorReportController;
 use App\Http\Controllers\Api\TailorSalaryController;
 use App\Http\Controllers\Api\SalaryHistoryController;
 
+// ── Pharmacy Controllers ─────────────────────────────────────
+use App\Http\Controllers\Api\Pharmacy\PharmacyDashboardController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyMedicineController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyCategoryController;
+use App\Http\Controllers\Api\Pharmacy\PharmacySupplierController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyCustomerController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyPurchaseController;
+use App\Http\Controllers\Api\Pharmacy\PharmacySaleController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyPrescriptionController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyEmployeeController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyExpenseController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyReturnController;
+
 
 // ════════════════════════════════════════════════════════════
 // PUBLIC ROUTES — Authentication required নেই
@@ -173,12 +186,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Wallets
     Route::apiResource('wallets', WalletController::class)->except(['show']);
 
-    // Debt Records
-    Route::patch('debt-records/{id}/settle', [DebtRecordController::class, 'settle']); // ⚠️ static আগে
+    // Debt Records — ⚠️ static 'settle' BEFORE apiResource
+    Route::patch('debt-records/{id}/settle', [DebtRecordController::class, 'settle']);
     Route::apiResource('debt-records', DebtRecordController::class)->except(['show']);
 
-    // Tasks
-    Route::patch('tasks/{id}/toggle-done', [TaskController::class, 'toggleDone']); // ⚠️ static আগে
+    // Tasks — ⚠️ static 'toggle-done' BEFORE apiResource
+    Route::patch('tasks/{id}/toggle-done', [TaskController::class, 'toggleDone']);
     Route::apiResource('tasks', TaskController::class)->except(['show']);
 
     // Ad-Free
@@ -420,19 +433,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('dashboard',         [TailordashboardController::class, 'index']);
         Route::get('dashboard/summary', [TailordashboardController::class, 'summary']);
 
-        // Customers
-        Route::get('customers/{id}/orders', [CustomerController::class, 'orders']); // ⚠️ static আগে
+        // Customers — ⚠️ static 'orders' BEFORE apiResource
+        Route::get('customers/{id}/orders', [CustomerController::class, 'orders']);
         Route::apiResource('customers', CustomerController::class);
 
-        // Orders
-        Route::patch('orders/{id}/status',       [OrderController::class, 'updateStatus']);       // ⚠️ static আগে
-        Route::patch('orders/{id}/measurements', [OrderController::class, 'updateMeasurements']); // ⚠️ static আগে
+        // Orders — ⚠️ static routes BEFORE apiResource
+        Route::patch('orders/{id}/status',       [OrderController::class, 'updateStatus']);
+        Route::patch('orders/{id}/measurements', [OrderController::class, 'updateMeasurements']);
         Route::apiResource('orders', OrderController::class);
 
         // Employees
         Route::apiResource('employees', EmployeeController::class);
 
-        // Inventory — ⚠️ static 'low-stock/list' BEFORE apiResource
+        // Inventory — ⚠️ static routes BEFORE apiResource
         Route::get('inventory/low-stock/list', [InventoryController::class, 'lowStock']);
         Route::patch('inventory/{id}/stock',   [InventoryController::class, 'updateStock']);
         Route::apiResource('inventory',        InventoryController::class);
@@ -485,7 +498,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Brick Productions
         Route::apiResource('productions', BrickProductionController::class);
 
-        // Raw Materials — ⚠️ custom routes AFTER apiResource won't conflict
+        // Raw Materials — ⚠️ custom routes BEFORE apiResource
         Route::post('raw-materials/{rawMaterial}/purchase', [BrickkilnsRawMaterialController::class, 'purchase']);
         Route::patch('raw-materials/{rawMaterial}/use',     [BrickkilnsRawMaterialController::class, 'use']);
         Route::apiResource('raw-materials', BrickkilnsRawMaterialController::class);
@@ -506,7 +519,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('inventory',             [BrickkilnInventoryController::class, 'index']);
         Route::put('inventory/{inventory}', [BrickkilnInventoryController::class, 'update']);
 
-        // Expenses — ⚠️ static 'expense-categories' outside prefix
+        // Expenses — ⚠️ static 'expense-categories' BEFORE apiResource
         Route::get('expense-categories', [BrickkilnExpenseController::class, 'categories']);
         Route::apiResource('expenses', BrickkilnExpenseController::class)->except(['show']);
 
@@ -529,4 +542,52 @@ Route::middleware('auth:sanctum')->group(function () {
 
     }); // end brickkilns
 
-}); // end middleware('auth:sanctum')
+
+    // ════════════════════════════════════════════════════════
+    // PHARMACY — /api/pharmacy/...
+    // ════════════════════════════════════════════════════════
+    Route::prefix('pharmacy')->group(function () {
+
+ // Dashboard
+    Route::get('pharmacydashboard', [PharmacyDashboardController::class, 'index']);
+
+    // Medicines — static routes must be BEFORE apiResource
+    Route::get('medicines/expiry',    [PharmacyMedicineController::class, 'expiry']);
+    Route::get('medicines/low-stock', [PharmacyMedicineController::class, 'lowStock']);
+    Route::apiResource('medicines', PharmacyMedicineController::class);
+
+    // Categories
+    Route::apiResource('pharmacycategories', PharmacyCategoryController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Suppliers
+    Route::apiResource('pharmacysuppliers', PharmacySupplierController::class);
+
+    // Customers
+    Route::apiResource('pharmacycustomers', PharmacyCustomerController::class);
+
+    // Purchases
+    Route::apiResource('pharmacypurchases', PharmacyPurchaseController::class);
+
+    // Sales (update added)
+    Route::apiResource('sales', PharmacySaleController::class)
+        ->only(['index', 'store', 'show', 'update', 'destroy']);
+
+    // Prescriptions (update added)
+    Route::apiResource('pharmacyprescriptions', PharmacyPrescriptionController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Employees
+    Route::apiResource('pharmacyemployees', PharmacyEmployeeController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Expenses
+    Route::apiResource('pharmacyexpenses', PharmacyExpenseController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Returns (update added)
+    Route::apiResource('pharmacyreturns', PharmacyReturnController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    }); // end pharmacy
+
+}); // end auth:sanctum
