@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SamitiExpenseController extends Controller
 {
+    // ── GET /samiti/expenses ──────────────────────────────────────────────
     public function index(Request $request)
     {
         $userId = Auth::id();
@@ -23,14 +24,14 @@ class SamitiExpenseController extends Controller
             'expense_id'  => $e->expense_id,
             'description' => $e->description,
             'category'    => $e->category,
-            'amount'      => $e->amount,
+            'amount'      => (float) $e->amount,
             'date'        => $e->date?->format('Y-m-d'),
             'approved_by' => $e->approved_by,
             'is_paid'     => $e->is_paid,
         ]);
 
-        $totalExpense = SamitiExpense::where('user_id', $userId)->sum('amount');
-        $thisMonth    = SamitiExpense::where('user_id', $userId)
+        $totalExpense = (float) SamitiExpense::where('user_id', $userId)->sum('amount');
+        $thisMonth    = (float) SamitiExpense::where('user_id', $userId)
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->sum('amount');
@@ -45,6 +46,7 @@ class SamitiExpenseController extends Controller
         ]);
     }
 
+    // ── POST /samiti/expenses ─────────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
@@ -72,6 +74,32 @@ class SamitiExpenseController extends Controller
         return response()->json(['success' => true, 'data' => $expense], 201);
     }
 
+    // ── PUT /samiti/expenses/{id} ──────────────────────────────────────────
+    // ✅ নতুন: এডিট করলে এই method call হবে — নতুন record হবে না
+    public function update(Request $request, string $id)
+    {
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'amount'      => 'required|numeric|min:0.01',
+            'approved_by' => 'nullable|string|max:255',
+            'date'        => 'nullable|date',
+        ]);
+
+        $expense = SamitiExpense::where('user_id', Auth::id())->findOrFail($id);
+
+        $expense->update([
+            'description' => $request->description,
+            'category'    => $request->category,
+            'amount'      => $request->amount,
+            'date'        => $request->date ?? $expense->date,
+            'approved_by' => $request->approved_by ?? $expense->approved_by,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $expense]);
+    }
+
+    // ── DELETE /samiti/expenses/{id} ───────────────────────────────────────
     public function destroy(string $id)
     {
         $expense = SamitiExpense::where('user_id', Auth::id())->findOrFail($id);

@@ -4,14 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
-    /**
-     * GET /api/setting
-     * Return the single settings row as JSON
-     */
     public function index()
     {
         $setting = Setting::first();
@@ -38,9 +33,4 @@ class SettingController extends Controller
             ],
         ]);
     }
-
-    public function store(Request $request) {}
-    public function show(string $id) {}
-    public function update(Request $request, string $id) {}
-    public function destroy(string $id) {}
 }

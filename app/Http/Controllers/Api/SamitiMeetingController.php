@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SamitiMeetingController extends Controller
 {
+    // ── GET /samiti/meetings ──────────────────────────────────────────────
     public function index()
     {
         $meetings = SamitiMeeting::where('user_id', Auth::id())
@@ -29,15 +30,16 @@ class SamitiMeetingController extends Controller
         return response()->json(['success' => true, 'data' => $meetings]);
     }
 
+    // ── POST /samiti/meetings ─────────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
             'title'  => 'required|string|max:255',
             'date'   => 'required|date',
+            'time'   => 'nullable|string|max:20',
             'venue'  => 'nullable|string|max:255',
             'agenda' => 'nullable|string',
             'notes'  => 'nullable|string',
-            'time'   => 'nullable|string|max:20',
         ]);
 
         $userId = Auth::id();
@@ -56,5 +58,41 @@ class SamitiMeetingController extends Controller
         ]);
 
         return response()->json(['success' => true, 'data' => $meeting], 201);
+    }
+
+    // ── PUT /samiti/meetings/{id} ──────────────────────────────────────────
+    // ✅ নতুন: এডিট করলে এই method call হবে — নতুন record হবে না
+    public function update(Request $request, string $id)
+    {
+        $request->validate([
+            'title'  => 'required|string|max:255',
+            'date'   => 'required|date',
+            'time'   => 'nullable|string|max:20',
+            'venue'  => 'nullable|string|max:255',
+            'agenda' => 'nullable|string',
+            'notes'  => 'nullable|string',
+        ]);
+
+        $meeting = SamitiMeeting::where('user_id', Auth::id())->findOrFail($id);
+
+        $meeting->update([
+            'title'  => $request->title,
+            'date'   => $request->date,
+            'time'   => $request->time ?? $meeting->time,
+            'venue'  => $request->venue ?? $meeting->venue,
+            'agenda' => $request->agenda ?? '',
+            'notes'  => $request->notes ?? '',
+        ]);
+
+        return response()->json(['success' => true, 'data' => $meeting]);
+    }
+
+    // ── DELETE /samiti/meetings/{id} ───────────────────────────────────────
+    public function destroy(string $id)
+    {
+        $meeting = SamitiMeeting::where('user_id', Auth::id())->findOrFail($id);
+        $meeting->delete();
+
+        return response()->json(['success' => true, 'message' => 'Meeting deleted']);
     }
 }

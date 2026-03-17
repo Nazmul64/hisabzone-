@@ -20,13 +20,19 @@ class DealerController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string',
-            'phone'    => 'required|string',
-            'address'  => 'nullable|string',
-            'products' => 'nullable|string',
+            'name'     => 'required|string|max:255',
+            'phone'    => 'required|string|max:20',
+            'address'  => 'nullable|string|max:500',
+            'products' => 'nullable|string|max:500',
         ]);
+
         $dealer = TailorDealer::create([...$data, 'user_id' => $this->uid($request)]);
-        return response()->json(['success' => true, 'message' => 'ডিলার যোগ হয়েছে', 'data' => $dealer], 201);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ডিলার যোগ হয়েছে',
+            'data'    => $dealer,
+        ], 201);
     }
 
     public function show(Request $request, $id)
@@ -40,19 +46,31 @@ class DealerController extends Controller
     public function update(Request $request, $id)
     {
         $dealer = TailorDealer::where('user_id', $this->uid($request))->findOrFail($id);
-        $dealer->update($request->validate([
-            'name'           => 'sometimes|string',
-            'phone'          => 'sometimes|string',
-            'address'        => 'nullable|string',
-            'products'       => 'nullable|string',
-            'total_purchase' => 'nullable|numeric',
-        ]));
-        return response()->json(['success' => true, 'message' => 'আপডেট হয়েছে', 'data' => $dealer]);
+
+        $validated = $request->validate([
+            'name'           => 'sometimes|required|string|max:255',
+            'phone'          => 'sometimes|required|string|max:20',
+            'address'        => 'nullable|string|max:500',
+            'products'       => 'nullable|string|max:500',
+            'total_purchase' => 'nullable|numeric|min:0',
+        ]);
+
+        $dealer->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ডিলার আপডেট হয়েছে',
+            'data'    => $dealer->fresh(),
+        ]);
     }
 
     public function destroy(Request $request, $id)
     {
         TailorDealer::where('user_id', $this->uid($request))->findOrFail($id)->delete();
-        return response()->json(['success' => true, 'message' => 'মুছে ফেলা হয়েছে']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ডিলার মুছে ফেলা হয়েছে',
+        ]);
     }
 }

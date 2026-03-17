@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 
 class SamitiFundController extends Controller
 {
+    // ─────────────────────────────────────────────
+    // GET /api/samiti/fund
+    // ─────────────────────────────────────────────
     public function index()
     {
         $userId = Auth::id();
@@ -27,8 +30,10 @@ class SamitiFundController extends Controller
                 'date'           => $t->date?->format('Y-m-d'),
             ]);
 
-        $totalCredit = SamitiFundTransaction::where('user_id', $userId)->where('is_credit', true)->sum('amount');
-        $totalDebit  = SamitiFundTransaction::where('user_id', $userId)->where('is_credit', false)->sum('amount');
+        $totalCredit = SamitiFundTransaction::where('user_id', $userId)
+            ->where('is_credit', true)->sum('amount');
+        $totalDebit  = SamitiFundTransaction::where('user_id', $userId)
+            ->where('is_credit', false)->sum('amount');
 
         return response()->json([
             'success' => true,
@@ -41,6 +46,9 @@ class SamitiFundController extends Controller
         ]);
     }
 
+    // ─────────────────────────────────────────────
+    // POST /api/samiti/fund
+    // ─────────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
@@ -62,10 +70,53 @@ class SamitiFundController extends Controller
             'description'    => $request->description,
             'amount'         => $request->amount,
             'is_credit'      => $request->is_credit,
-            'reference'      => $request->reference ?? ('REF-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT)),
+            'reference'      => $request->reference
+                                ?? ('REF-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT)),
             'date'           => $request->date ?? now()->toDateString(),
         ]);
 
         return response()->json(['success' => true, 'data' => $tx], 201);
+    }
+
+    // ─────────────────────────────────────────────
+    // PUT /api/samiti/fund/{id}
+    // ─────────────────────────────────────────────
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'type'        => 'required|string|max:50',
+            'description' => 'required|string|max:255',
+            'amount'      => 'required|numeric|min:0.01',
+            'is_credit'   => 'required|boolean',
+            'reference'   => 'nullable|string|max:100',
+            'date'        => 'nullable|date',
+        ]);
+
+        $tx = SamitiFundTransaction::where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        $tx->update([
+            'type'        => $request->type,
+            'description' => $request->description,
+            'amount'      => $request->amount,
+            'is_credit'   => $request->is_credit,
+            'reference'   => $request->reference ?? $tx->reference,
+            'date'        => $request->date ?? $tx->date,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $tx]);
+    }
+
+    // ─────────────────────────────────────────────
+    // DELETE /api/samiti/fund/{id}
+    // ─────────────────────────────────────────────
+    public function destroy($id)
+    {
+        $tx = SamitiFundTransaction::where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        $tx->delete();
+
+        return response()->json(['success' => true, 'message' => 'লেনদেন মুছে ফেলা হয়েছে']);
     }
 }

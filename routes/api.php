@@ -103,9 +103,26 @@ use App\Http\Controllers\Api\Pharmacy\PharmacyEmployeeController;
 use App\Http\Controllers\Api\Pharmacy\PharmacyExpenseController;
 use App\Http\Controllers\Api\Pharmacy\PharmacyReturnController;
 
+// ── Nursery Controllers ──────────────────────────────────────
+use App\Http\Controllers\Nursery\NurseryDashboardController;
+use App\Http\Controllers\Nursery\NurseryPlantCategoryController;
+use App\Http\Controllers\Nursery\NurseryPlantController;
+use App\Http\Controllers\Nursery\NurserySupplierController;
+use App\Http\Controllers\Nursery\NurseryCustomerController;
+use App\Http\Controllers\Nursery\NurseryPurchaseController;
+use App\Http\Controllers\Nursery\NurserySaleController;
+use App\Http\Controllers\Nursery\NurseryEmployeeController;
+use App\Http\Controllers\Nursery\NurseryGardenAreaController;
+use App\Http\Controllers\Nursery\NurseryPlantCareController;
+use App\Http\Controllers\Nursery\NurseryFertilizerController;
+use App\Http\Controllers\Nursery\NurseryExpenseController;
+use App\Http\Controllers\Nursery\NurseryOrderController;
+use App\Http\Controllers\Nursery\NurseryDeliveryController;
+use App\Http\Controllers\Nursery\NurseryReportController;
+
 
 // ════════════════════════════════════════════════════════════
-// PUBLIC ROUTES — Authentication required নেই
+// PUBLIC ROUTES — Token লাগবে না
 // ════════════════════════════════════════════════════════════
 
 // App Settings
@@ -235,6 +252,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile
     Route::get('profile',  [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);
+    Route::post('profile/change-password', [ProfileController::class, 'changePassword']);
 
     // Ad Settings
     Route::prefix('adsetting')->group(function () {
@@ -271,26 +289,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('collections/collect-all',  [SamitiCollectionController::class, 'collectAll']);
         Route::patch('collections/{id}/toggle', [SamitiCollectionController::class, 'toggle']);
 
-        // Loans
         Route::get('loans',            [SamitiLoanController::class, 'index']);
         Route::post('loans',           [SamitiLoanController::class, 'store']);
+        Route::put('loans/{id}',       [SamitiLoanController::class, 'update']);   // ✅ নতুন
         Route::patch('loans/{id}/pay', [SamitiLoanController::class, 'makePayment']);
         Route::delete('loans/{id}',    [SamitiLoanController::class, 'destroy']);
 
         // Fund
-        Route::get('fund',  [SamitiFundController::class, 'index']);
-        Route::post('fund', [SamitiFundController::class, 'store']);
+        Route::get('fund',         [SamitiFundController::class, 'index']);
+        Route::post('fund',        [SamitiFundController::class, 'store']);
+        Route::put('fund/{id}',    [SamitiFundController::class, 'update']);
+        Route::delete('fund/{id}', [SamitiFundController::class, 'destroy']);
 
-        // Expenses
+
         Route::get('expenses',         [SamitiExpenseController::class, 'index']);
         Route::post('expenses',        [SamitiExpenseController::class, 'store']);
+        Route::put('expenses/{id}',    [SamitiExpenseController::class, 'update']);   // ✅ নতুন
         Route::delete('expenses/{id}', [SamitiExpenseController::class, 'destroy']);
 
         // Fines
-        Route::get('fines',               [SamitiFineController::class, 'index']);
-        Route::post('fines',              [SamitiFineController::class, 'store']);
+
+        Route::get('fines',           [SamitiFineController::class, 'index']);
+        Route::post('fines',          [SamitiFineController::class, 'store']);
+        Route::put('fines/{id}',      [SamitiFineController::class, 'update']);        // ✅ নতুন
         Route::patch('fines/{id}/toggle', [SamitiFineController::class, 'toggle']);
-        Route::delete('fines/{id}',       [SamitiFineController::class, 'destroy']);
+        Route::delete('fines/{id}',   [SamitiFineController::class, 'destroy']);
 
         // Dividends — ⚠️ static routes BEFORE dynamic {id}
         Route::get('dividends',                 [SamitiDividendController::class, 'index']);
@@ -299,8 +322,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('dividends/{id}/toggle',   [SamitiDividendController::class, 'toggle']);
 
         // Meetings
-        Route::get('meetings',  [SamitiMeetingController::class, 'index']);
-        Route::post('meetings', [SamitiMeetingController::class, 'store']);
+        Route::get('meetings',       [SamitiMeetingController::class, 'index']);
+        Route::post('meetings',      [SamitiMeetingController::class, 'store']);
+        Route::put('meetings/{id}',  [SamitiMeetingController::class, 'update']);   // ✅ নতুন
+        Route::delete('meetings/{id}', [SamitiMeetingController::class, 'destroy']); // ✅ নতুন
 
         // Attendance
         Route::get('attendance',               [SamitiAttendanceController::class, 'index']);
@@ -548,46 +573,140 @@ Route::middleware('auth:sanctum')->group(function () {
     // ════════════════════════════════════════════════════════
     Route::prefix('pharmacy')->group(function () {
 
- // Dashboard
-    Route::get('pharmacydashboard', [PharmacyDashboardController::class, 'index']);
+        // Dashboard
+        Route::get('pharmacydashboard', [PharmacyDashboardController::class, 'index']);
 
-    // Medicines — static routes must be BEFORE apiResource
-    Route::get('medicines/expiry',    [PharmacyMedicineController::class, 'expiry']);
-    Route::get('medicines/low-stock', [PharmacyMedicineController::class, 'lowStock']);
-    Route::apiResource('medicines', PharmacyMedicineController::class);
+        // Medicines — ⚠️ static routes BEFORE apiResource
+        Route::get('medicines/expiry',    [PharmacyMedicineController::class, 'expiry']);
+        Route::get('medicines/low-stock', [PharmacyMedicineController::class, 'lowStock']);
+        Route::apiResource('medicines', PharmacyMedicineController::class);
 
-    // Categories
-    Route::apiResource('pharmacycategories', PharmacyCategoryController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Categories
+        Route::apiResource('pharmacycategories', PharmacyCategoryController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
-    // Suppliers
-    Route::apiResource('pharmacysuppliers', PharmacySupplierController::class);
+        // Suppliers
+        Route::apiResource('pharmacysuppliers', PharmacySupplierController::class);
 
-    // Customers
-    Route::apiResource('pharmacycustomers', PharmacyCustomerController::class);
+        // Customers
+        Route::apiResource('pharmacycustomers', PharmacyCustomerController::class);
 
-    // Purchases
-    Route::apiResource('pharmacypurchases', PharmacyPurchaseController::class);
+        // Purchases
+        Route::apiResource('pharmacypurchases', PharmacyPurchaseController::class);
 
-    // Sales (update added)
-    Route::apiResource('sales', PharmacySaleController::class)
-        ->only(['index', 'store', 'show', 'update', 'destroy']);
+        // Sales
+        Route::apiResource('sales', PharmacySaleController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
-    // Prescriptions (update added)
-    Route::apiResource('pharmacyprescriptions', PharmacyPrescriptionController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Prescriptions
+        Route::apiResource('pharmacyprescriptions', PharmacyPrescriptionController::class)->only(['index', 'store', 'update', 'destroy']);
 
-    // Employees
-    Route::apiResource('pharmacyemployees', PharmacyEmployeeController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Employees
+        Route::apiResource('pharmacyemployees', PharmacyEmployeeController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
-    // Expenses
-    Route::apiResource('pharmacyexpenses', PharmacyExpenseController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Expenses
+        Route::apiResource('pharmacyexpenses', PharmacyExpenseController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
-    // Returns (update added)
-    Route::apiResource('pharmacyreturns', PharmacyReturnController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        // Returns
+        Route::apiResource('pharmacyreturns', PharmacyReturnController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
+
     }); // end pharmacy
+
+
+    // ════════════════════════════════════════════════════════
+    // NURSERY — /api/nursery/...
+    // ════════════════════════════════════════════════════════
+Route::prefix('nursery')->group(function () {
+
+    Route::get('nurserydashboard', [NurseryDashboardController::class, 'index']);
+
+    Route::get('plant-categories',         [NurseryPlantCategoryController::class, 'index']);
+    Route::post('plant-categories',        [NurseryPlantCategoryController::class, 'store']);
+    Route::get('plant-categories/{id}',    [NurseryPlantCategoryController::class, 'show']);
+    Route::put('plant-categories/{id}',    [NurseryPlantCategoryController::class, 'update']);
+    Route::delete('plant-categories/{id}', [NurseryPlantCategoryController::class, 'destroy']);
+
+    Route::get('plants/low-stock',  [NurseryPlantController::class, 'lowStock']);
+    Route::get('plants',            [NurseryPlantController::class, 'index']);
+    Route::post('plants',           [NurseryPlantController::class, 'store']);
+    Route::get('plants/{id}',       [NurseryPlantController::class, 'show']);
+    Route::put('plants/{id}',       [NurseryPlantController::class, 'update']);
+    Route::delete('plants/{id}',    [NurseryPlantController::class, 'destroy']);
+
+    Route::get('suppliers',         [NurserySupplierController::class, 'index']);
+    Route::post('suppliers',        [NurserySupplierController::class, 'store']);
+    Route::get('suppliers/{id}',    [NurserySupplierController::class, 'show']);
+    Route::put('suppliers/{id}',    [NurserySupplierController::class, 'update']);
+    Route::delete('suppliers/{id}', [NurserySupplierController::class, 'destroy']);
+
+    Route::get('customers',         [NurseryCustomerController::class, 'index']);
+    Route::post('customers',        [NurseryCustomerController::class, 'store']);
+    Route::get('customers/{id}',    [NurseryCustomerController::class, 'show']);
+    Route::put('customers/{id}',    [NurseryCustomerController::class, 'update']);
+    Route::delete('customers/{id}', [NurseryCustomerController::class, 'destroy']);
+
+    Route::get('purchases',         [NurseryPurchaseController::class, 'index']);
+    Route::post('purchases',        [NurseryPurchaseController::class, 'store']);
+    Route::get('purchases/{id}',    [NurseryPurchaseController::class, 'show']);
+    Route::put('purchases/{id}',    [NurseryPurchaseController::class, 'update']);
+    Route::delete('purchases/{id}', [NurseryPurchaseController::class, 'destroy']);
+
+    Route::get('sales',             [NurserySaleController::class, 'index']);
+    Route::post('sales',            [NurserySaleController::class, 'store']);
+    Route::get('sales/{id}',        [NurserySaleController::class, 'show']);
+    Route::put('sales/{id}',        [NurserySaleController::class, 'update']);
+    Route::delete('sales/{id}',     [NurserySaleController::class, 'destroy']);
+
+    Route::get('orders',            [NurseryOrderController::class, 'index']);
+    Route::post('orders',           [NurseryOrderController::class, 'store']);
+    Route::get('orders/{id}',       [NurseryOrderController::class, 'show']);
+    Route::put('orders/{id}',       [NurseryOrderController::class, 'update']);
+    Route::delete('orders/{id}',    [NurseryOrderController::class, 'destroy']);
+
+    Route::get('deliveries',        [NurseryDeliveryController::class, 'index']);
+    Route::post('deliveries',       [NurseryDeliveryController::class, 'store']);
+    Route::get('deliveries/{id}',   [NurseryDeliveryController::class, 'show']);
+    Route::put('deliveries/{id}',   [NurseryDeliveryController::class, 'update']);
+    Route::delete('deliveries/{id}',[NurseryDeliveryController::class, 'destroy']);
+
+    Route::get('employees',         [NurseryEmployeeController::class, 'index']);
+    Route::post('employees',        [NurseryEmployeeController::class, 'store']);
+    Route::get('employees/{id}',    [NurseryEmployeeController::class, 'show']);
+    Route::put('employees/{id}',    [NurseryEmployeeController::class, 'update']);
+    Route::delete('employees/{id}', [NurseryEmployeeController::class, 'destroy']);
+
+    Route::get('garden-areas',        [NurseryGardenAreaController::class, 'index']);
+    Route::post('garden-areas',       [NurseryGardenAreaController::class, 'store']);
+    Route::get('garden-areas/{id}',   [NurseryGardenAreaController::class, 'show']);
+    Route::put('garden-areas/{id}',   [NurseryGardenAreaController::class, 'update']);
+    Route::delete('garden-areas/{id}',[NurseryGardenAreaController::class, 'destroy']);
+
+    Route::get('plant-care',        [NurseryPlantCareController::class, 'index']);
+    Route::post('plant-care',       [NurseryPlantCareController::class, 'store']);
+    Route::get('plant-care/{id}',   [NurseryPlantCareController::class, 'show']);
+    Route::put('plant-care/{id}',   [NurseryPlantCareController::class, 'update']);
+    Route::delete('plant-care/{id}',[NurseryPlantCareController::class, 'destroy']);
+
+    Route::get('fertilizers',        [NurseryFertilizerController::class, 'index']);
+    Route::post('fertilizers',       [NurseryFertilizerController::class, 'store']);
+    Route::get('fertilizers/{id}',   [NurseryFertilizerController::class, 'show']);
+    Route::put('fertilizers/{id}',   [NurseryFertilizerController::class, 'update']);
+    Route::delete('fertilizers/{id}',[NurseryFertilizerController::class, 'destroy']);
+
+    Route::get('expenses',        [NurseryExpenseController::class, 'index']);
+    Route::post('expenses',       [NurseryExpenseController::class, 'store']);
+    Route::get('expenses/{id}',   [NurseryExpenseController::class, 'show']);
+    Route::put('expenses/{id}',   [NurseryExpenseController::class, 'update']);
+    Route::delete('expenses/{id}',[NurseryExpenseController::class, 'destroy']);
+
+    Route::get('reports/daily',       [NurseryReportController::class, 'daily']);
+    Route::get('reports/monthly',     [NurseryReportController::class, 'monthly']);
+    Route::get('reports/annual',      [NurseryReportController::class, 'annual']);
+    Route::get('reports/profit-loss', [NurseryReportController::class, 'profitLoss']);
+    Route::get('reports/stock',       [NurseryReportController::class, 'stock']);
+
+}); // end nursery
 
 }); // end auth:sanctum

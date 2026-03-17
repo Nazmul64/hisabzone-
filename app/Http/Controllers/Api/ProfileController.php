@@ -1,42 +1,39 @@
 <?php
 // ════════════════════════════════════════════════════════════════════
 // ফাইল: app/Http/Controllers/Api/ProfileController.php
+// ✅ show, update, changePassword — সব কাজ করবে
 // ════════════════════════════════════════════════════════════════════
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\FinanceManage;
-use App\Models\Saving;
-use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
     /**
      * GET /api/profile
-     * লগইন করা ইউজারের প্রোফাইল + stats
      */
     public function show()
     {
         /** @var User $user */
         $user = User::find(Auth::id());
 
-        // Stats — model না থাকলে 0 দেখাবে
         $totalTransactions = 0;
         $totalSavings      = 0;
         $totalTasks        = 0;
 
-        if (class_exists(FinanceManage::class)) {
-            $totalTransactions = FinanceManage::count();
+        if (class_exists(\App\Models\FinanceManage::class)) {
+            $totalTransactions = \App\Models\FinanceManage::count();
         }
-        if (class_exists(Saving::class)) {
-            $totalSavings = Saving::count();
+        if (class_exists(\App\Models\Saving::class)) {
+            $totalSavings = \App\Models\Saving::count();
         }
-        if (class_exists(Task::class)) {
-            $totalTasks = Task::count();
+        if (class_exists(\App\Models\Task::class)) {
+            $totalTasks = \App\Models\Task::count();
         }
 
         return response()->json([
@@ -56,7 +53,6 @@ class ProfileController extends Controller
 
     /**
      * POST /api/profile
-     * লগইন করা ইউজারের প্রোফাইল আপডেট
      */
     public function update(Request $request)
     {
@@ -83,6 +79,11 @@ class ProfileController extends Controller
             ],
         ]);
     }
+
+    /**
+     * POST /api/profile/change-password
+     * ✅ current_password + new_password + new_password_confirmation
+     */
     public function changePassword(Request $request)
     {
         /** @var User $user */
@@ -91,23 +92,27 @@ class ProfileController extends Controller
         $request->validate([
             'current_password'          => 'required|string',
             'new_password'              => 'required|string|min:6|confirmed',
+            'new_password_confirmation' => 'required|string',
         ]);
 
         // বর্তমান পাসওয়ার্ড চেক
-        if (! \Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'বর্তমান পাসওয়ার্ড সঠিক নয়',
+                'errors'  => [
+                    'current_password' => ['বর্তমান পাসওয়ার্ড সঠিক নয়'],
+                ],
             ], 422);
         }
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->new_password),
+            'password' => Hash::make($request->new_password),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'পাসওয়ার্ড পরিবর্তন হয়েছে',
+            'message' => 'পাসওয়ার্ড পরিবর্তন হয়েছে ✅',
         ]);
     }
 }

@@ -9,22 +9,22 @@ use Illuminate\Validation\Rule;
 
 class AdsettingController extends Controller
 {
-
-    private function rules()
+    // ── Validation Rules ───────────────────────────────────────
+    private function rules(): array
     {
         return [
             'ad_type' => [
                 'required',
-                Rule::in(array_keys(Adsetting::adTypes()))
+                Rule::in(array_keys(Adsetting::adTypes())),
             ],
             'label'             => 'nullable|string|max:255',
             'ad_unit_id'        => 'required|string|max:255',
             'admob_app_id'      => 'required|string|max:255',
             'trigger'           => [
                 'nullable',
-                Rule::in(array_keys(Adsetting::triggerOptions()))
+                Rule::in(array_keys(Adsetting::triggerOptions())),
             ],
-            'trigger_frequency' => 'nullable|integer|min:0|max:9999',
+            'trigger_frequency' => 'nullable|integer|min:1|max:9999',
             'notes'             => 'nullable|string|max:1000',
         ];
     }
@@ -33,104 +33,64 @@ class AdsettingController extends Controller
     public function index()
     {
         $adsettings = Adsetting::latest()->get();
+        $adTypes    = Adsetting::adTypes();
 
-        return view('admin.adsetting.index', [
-            'adsettings' => $adsettings,
-            'adTypes'    => Adsetting::adTypes(),
-        ]);
+        return view('admin.adsetting.index', compact('adsettings', 'adTypes'));
     }
 
     // ── Create ─────────────────────────────────────────────────
     public function create()
     {
-        return view('admin.adsetting.create', [
-            'adTypes'  => Adsetting::adTypes(),
-            'triggers' => Adsetting::triggerOptions(),
-        ]);
+        $adTypes  = Adsetting::adTypes();
+        $triggers = Adsetting::triggerOptions();
+
+        return view('admin.adsetting.create', compact('adTypes', 'triggers'));
     }
 
     // ── Store ──────────────────────────────────────────────────
     public function store(Request $request)
     {
         $data = $request->validate($this->rules());
-        $data['is_active'] = $request->has('is_active');
+
+        $data['trigger_frequency'] = max(1, (int) ($data['trigger_frequency'] ?? 1));
+        $data['is_active']         = $request->boolean('is_active');
+
         Adsetting::create($data);
 
         return redirect()
             ->route('adsetting.index')
-            ->with('success', 'Ad Created Successfully');
+            ->with('success', 'Ad Setting সফলভাবে তৈরি হয়েছে ✅');
     }
 
     // ── Edit ───────────────────────────────────────────────────
-    public function edit($id)
+    public function edit(Adsetting $adsetting)
     {
-        $adsetting = Adsetting::findOrFail($id);
+        $adTypes  = Adsetting::adTypes();
+        $triggers = Adsetting::triggerOptions();
 
-        return view('admin.adsetting.edit', [
-            'adsetting' => $adsetting,
-            'adTypes'   => Adsetting::adTypes(),
-            'triggers'  => Adsetting::triggerOptions(),
-        ]);
+        return view('admin.adsetting.edit', compact('adsetting', 'adTypes', 'triggers'));
     }
 
     // ── Update ─────────────────────────────────────────────────
-    public function update(Request $request, $id)
+    public function update(Request $request, Adsetting $adsetting)
     {
-        $adsetting = Adsetting::findOrFail($id);
         $data = $request->validate($this->rules());
-        $data['is_active'] = $request->has('is_active');
+
+        $data['trigger_frequency'] = max(1, (int) ($data['trigger_frequency'] ?? 1));
+        $data['is_active']         = $request->boolean('is_active');
+
         $adsetting->update($data);
 
         return redirect()
             ->route('adsetting.index')
-            ->with('success', 'Ad Updated Successfully');
+            ->with('success', 'Ad Setting সফলভাবে আপডেট হয়েছে ✅');
     }
 
     // ── Destroy ────────────────────────────────────────────────
-    public function destroy($id)
+    public function destroy(Adsetting $adsetting)
     {
-        Adsetting::findOrFail($id)->delete();
-        return back()->with('success', 'Ad Deleted');
-    }
+        $adsetting->delete();
 
-    // ══════════════════════════════════════════════════════════
-    // ✅ Flutter App API — GET /api/adsetting
-    //
-    // সমস্যা ছিল:
-    //   1. admob_app_id field missing ছিল — Flutter এ দরকার
-    //   2. is_active field missing ছিল — Flutter parse করতে পারছিল না
-    //   3. label field missing ছিল
-    //
-    // এখন সব field return করা হচ্ছে
-    // ══════════════════════════════════════════════════════════
-    public function activeAds()
-    {
-        // ✅ active() scope — is_active = 1 শুধু
-        $ad = Adsetting::active()
-            ->latest()
-            ->first([
-                'id',
-                'ad_type',
-                'label',
-                'ad_unit_id',
-                'admob_app_id',      // ✅ Flutter এ দরকার
-                'trigger',
-                'trigger_frequency',
-                'is_active',         // ✅ Flutter parse করে
-            ]);
-
-        if (! $ad) {
-            return response()->json([
-                'success' => false,
-                'data'    => null,
-                'message' => 'No active ad setting found',
-            ], 200); // 200 দিচ্ছি যাতে Flutter এ error না হয়
-        }
-
-        return response()->json([
-            'success' => true,
-            'data'    => $ad,
-            'message' => null,
-        ]);
+        return back()->with('success', 'Ad Setting মুছে গেছে ✅');
     }
 }

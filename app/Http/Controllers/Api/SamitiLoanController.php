@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SamitiLoanController extends Controller
 {
+    // ── GET /samiti/loans ─────────────────────────────────────────────────
     public function index(Request $request)
     {
         $userId = Auth::id();
@@ -19,25 +20,26 @@ class SamitiLoanController extends Controller
         }
 
         $loans = $query->latest()->get()->map(fn($l) => [
-            'id'            => $l->id,
-            'member_name'   => $l->member->name ?? '',
-            'loan_id'       => $l->loan_id,
-            'loan_amount'   => $l->loan_amount,
-            'interest_rate' => $l->interest_rate,
-            'total_payable' => $l->total_payable,
-            'paid_amount'   => $l->paid_amount,
-            'due_amount'    => $l->due_amount,
-            'purpose'       => $l->purpose,
-            'issue_date'    => $l->issue_date?->format('Y-m-d'),
-            'due_date'      => $l->due_date?->format('Y-m-d'),
-            'status'        => $l->status,
+            'id'               => $l->id,
+            'samiti_member_id' => $l->samiti_member_id,   // ✅ edit এর জন্য দরকার
+            'member_name'      => $l->member->name ?? '',
+            'loan_id'          => $l->loan_id,
+            'loan_amount'      => (float) $l->loan_amount,
+            'interest_rate'    => (float) $l->interest_rate,
+            'total_payable'    => (float) $l->total_payable,
+            'paid_amount'      => (float) $l->paid_amount,
+            'due_amount'       => (float) ($l->total_payable - $l->paid_amount),
+            'purpose'          => $l->purpose,
+            'issue_date'       => $l->issue_date?->format('Y-m-d'),
+            'due_date'         => $l->due_date?->format('Y-m-d'),
+            'status'           => $l->status,
         ]);
 
-        $totalLoaned = SamitiLoan::where('user_id', $userId)->sum('loan_amount');
-        $totalPaid   = SamitiLoan::where('user_id', $userId)->sum('paid_amount');
-        $totalDue    = SamitiLoan::where('user_id', $userId)
+        $totalLoaned = (float) SamitiLoan::where('user_id', $userId)->sum('loan_amount');
+        $totalPaid   = (float) SamitiLoan::where('user_id', $userId)->sum('paid_amount');
+        $totalDue    = (float) (SamitiLoan::where('user_id', $userId)
             ->selectRaw('SUM(total_payable - paid_amount) as due')
-            ->value('due') ?? 0;
+            ->value('due') ?? 0);
 
         return response()->json([
             'success' => true,
@@ -50,6 +52,7 @@ class SamitiLoanController extends Controller
         ]);
     }
 
+    // ── POST /samiti/loans ────────────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
@@ -84,6 +87,51 @@ class SamitiLoanController extends Controller
         return response()->json(['success' => true, 'data' => $loan], 201);
     }
 
+    // ── PUT /samiti/loans/{id} ─────────────────────────────────────────────
+    // ✅ নতুন: এডিট করলে এই method call হবে — নতুন record হবে না
+    public function update(Request $request, string $id)
+    {
+        $request->validate([
+            'samiti_member_id' => 'required|integer',
+            'loan_amount'      => 'required|numeric|min:1',
+            'interest_rate'    => 'nullable|numeric|min:0|max:100',
+            'purpose'          => 'nullable|string|max:255',
+            'due_date'         => 'nullable|date',
+        ]);
+
+        $loan = SamitiLoan::where('user_id', Auth::id())->findOrFail($id);
+
+        $rate         = $request->interest_rate ?? $loan->interest_rate;
+        $loanAmount   = $request->loan_amount;
+        $totalPayable = $loanAmount + ($loanAmount * $rate / 100);
+
+        // paid_amount যা আছে সেটা ঠিক রেখে বাকি সব আপডেট
+        $paidAmount = (float) $loan->paid_amount;
+        $status     = $loan->status;
+
+        // status recalculate
+        if ($paidAmount >= $totalPayable) {
+            $status = 'paid';
+        } elseif ($request->due_date && now()->toDate() > \Carbon\Carbon::parse($request->due_date)->toDate()) {
+            $status = 'overdue';
+        } else {
+            $status = 'active';
+        }
+
+        $loan->update([
+            'samiti_member_id' => $request->samiti_member_id,
+            'loan_amount'      => $loanAmount,
+            'interest_rate'    => $rate,
+            'total_payable'    => $totalPayable,
+            'purpose'          => $request->purpose,
+            'due_date'         => $request->due_date ?? $loan->due_date,
+            'status'           => $status,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $loan]);
+    }
+
+    // ── PATCH /samiti/loans/{id}/pay ──────────────────────────────────────
     public function makePayment(Request $request, string $id)
     {
         $request->validate(['amount' => 'required|numeric|min:0.01']);
@@ -103,6 +151,7 @@ class SamitiLoanController extends Controller
         return response()->json(['success' => true, 'data' => $loan]);
     }
 
+    // ── DELETE /samiti/loans/{id} ─────────────────────────────────────────
     public function destroy(string $id)
     {
         $loan = SamitiLoan::where('user_id', Auth::id())->findOrFail($id);

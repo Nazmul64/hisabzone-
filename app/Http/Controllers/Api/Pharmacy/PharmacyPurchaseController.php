@@ -98,6 +98,7 @@ class PharmacyPurchaseController extends Controller
         ]);
     }
 
+    // ✅ FIXED: সব field update করা যাবে
     public function update(Request $request, string $id): JsonResponse
     {
         $purchase = PharmacyPurchase::where('id', $id)
@@ -105,15 +106,26 @@ class PharmacyPurchaseController extends Controller
             ->firstOrFail();
 
         $validated = $request->validate([
-            'status' => 'nullable|in:pending,completed,cancelled',
-            'note'   => 'nullable|string',
+            'supplier_id' => 'nullable|exists:pharmacy_suppliers,id',
+            'medicine_id' => 'nullable|exists:pharmacy_medicines,id',
+            'invoice_no'  => 'nullable|string|max:100',
+            'quantity'    => 'nullable|integer|min:1',
+            'unit_price'  => 'nullable|numeric|min:0',
+            'date'        => 'nullable|date',
+            'status'      => 'nullable|in:pending,completed,cancelled',
+            'note'        => 'nullable|string',
         ]);
+
+        // total_amount recalculate
+        $qty   = $validated['quantity']   ?? $purchase->quantity;
+        $price = $validated['unit_price'] ?? $purchase->unit_price;
+        $validated['total_amount'] = $qty * $price;
 
         $purchase->update($validated);
 
         return response()->json([
             'success' => true,
-            'data'    => $purchase->fresh(),
+            'data'    => $purchase->fresh(['supplier', 'medicine']),
             'message' => 'Purchase updated successfully',
         ]);
     }
