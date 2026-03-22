@@ -96,4 +96,9 @@ class BrickkilnInventoryController extends Controller
 
         return $this->ok($inventory, 'ইনভেন্টরি sync হয়েছে');
     }
+    public function destroy(Inventory $inventory): JsonResponse
+{
+    $inventory->delete();
+    return $this->ok(null, 'ইনভেন্টরি মুছে ফেলা হয়েছে');
+}
 }

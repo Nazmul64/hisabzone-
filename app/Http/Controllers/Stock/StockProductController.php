@@ -11,7 +11,8 @@ class StockProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = StockProduct::forUser($request->user()->id)->active();
+        $userId = $request->user()->id;
+        $query = StockProduct::where('user_id', $userId)->where('is_active', true);
 
         if ($s = $request->search) {
             $query->where(function ($q) use ($s) {
@@ -20,7 +21,6 @@ class StockProductController extends Controller
                   ->orWhere('category', 'like', "%$s%");
             });
         }
-
         if ($cat = $request->category) {
             $query->where('category', $cat);
         }
@@ -56,7 +56,8 @@ class StockProductController extends Controller
             'description'     => 'nullable|string',
         ]);
 
-        $data['user_id'] = $request->user()->id;
+        $data['user_id']   = $request->user()->id;
+        $data['is_active'] = true;
 
         if ($request->hasFile('image')) {
             $image     = $request->file('image');
@@ -74,15 +75,28 @@ class StockProductController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, StockProduct $stockProduct): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
-        abort_if($stockProduct->user_id !== $request->user()->id, 403);
-        return response()->json(['success' => true, 'data' => $stockProduct]);
+        $product = StockProduct::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
-    public function update(Request $request, StockProduct $stockProduct): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
-        abort_if($stockProduct->user_id !== $request->user()->id, 403);
+        $product = StockProduct::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+        }
 
         $data = $request->validate([
             'name'            => 'sometimes|required|string|max:255',
@@ -98,8 +112,8 @@ class StockProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            if ($stockProduct->image_url && file_exists(public_path($stockProduct->image_url))) {
-                unlink(public_path($stockProduct->image_url));
+            if ($product->image_url && file_exists(public_path($product->image_url))) {
+                unlink(public_path($product->image_url));
             }
             $image     = $request->file('image');
             $imageName = time() . '_' . $image->getClientOriginalName();
@@ -107,39 +121,53 @@ class StockProductController extends Controller
             $data['image_url'] = 'uploads/stock/' . $imageName;
         }
 
-        $stockProduct->update($data);
+        $product->update($data);
 
         return response()->json([
             'success' => true,
-            'data'    => $stockProduct->fresh(),
+            'data'    => $product->fresh(),
             'message' => 'Product updated successfully',
         ]);
     }
 
-    public function destroy(Request $request, StockProduct $stockProduct): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
-        abort_if($stockProduct->user_id !== $request->user()->id, 403);
+        $product = StockProduct::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
-        if ($stockProduct->image_url && file_exists(public_path($stockProduct->image_url))) {
-            unlink(public_path($stockProduct->image_url));
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
-        $stockProduct->delete();
+
+        if ($product->image_url && file_exists(public_path($product->image_url))) {
+            unlink(public_path($product->image_url));
+        }
+
+        $product->delete();
 
         return response()->json(['success' => true, 'message' => 'Product deleted successfully']);
     }
 
     public function categories(Request $request): JsonResponse
     {
-        $cats = StockProduct::forUser($request->user()->id)
-            ->active()->whereNotNull('category')
-            ->pluck('category')->unique()->sort()->values();
+        $cats = StockProduct::where('user_id', $request->user()->id)
+            ->where('is_active', true)
+            ->whereNotNull('category')
+            ->pluck('category')
+            ->unique()->sort()->values();
 
         return response()->json(['success' => true, 'data' => $cats]);
     }
 
     public function lowStock(Request $request): JsonResponse
     {
-        $products = StockProduct::forUser($request->user()->id)->active()->lowStock()->get();
+        $products = StockProduct::where('user_id', $request->user()->id)
+            ->where('is_active', true)
+            ->get()
+            ->filter(fn($p) => $p->is_low_stock)
+            ->values();
+
         return response()->json(['success' => true, 'data' => $products]);
     }
 }

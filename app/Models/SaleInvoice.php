@@ -28,21 +28,19 @@ class SaleInvoice extends Model
         'due_amount'    => 'float',
     ];
 
-    // ── Relationships ─────────────────────────────────────────────
     public function user()     { return $this->belongsTo(User::class); }
     public function customer() { return $this->belongsTo(StockParty::class, 'customer_id'); }
     public function items()    { return $this->hasMany(SaleItem::class); }
-    public function payments() { return $this->hasMany(StockPayment::class, 'invoice_id', 'id'); }
-    public function returns()  { return $this->hasMany(SaleReturn::class); }
 
-    // ── Scopes ────────────────────────────────────────────────────
-    public function scopeForUser($query, $userId)       { return $query->where('user_id', $userId); }
-    public function scopeToday($query)                  { return $query->whereDate('date', today()); }
-    public function scopeThisMonth($query)              { return $query->whereYear('date', now()->year)->whereMonth('date', now()->month); }
-    public function scopeThisYear($query)               { return $query->whereYear('date', now()->year); }
-    public function scopeDateRange($query, $from, $to)  { return $query->whereBetween('date', [$from, $to]); }
+    // ✅ payments এবং returns relation সরিয়ে দেওয়া হয়েছে
+    // কারণ StockPayment ও SaleReturn model এখনো নেই
 
-    // ── Auto Invoice Number ───────────────────────────────────────
+    public function scopeForUser($query, $userId)      { return $query->where('user_id', $userId); }
+    public function scopeToday($query)                 { return $query->whereDate('date', today()); }
+    public function scopeThisMonth($query)             { return $query->whereYear('date', now()->year)->whereMonth('date', now()->month); }
+    public function scopeThisYear($query)              { return $query->whereYear('date', now()->year); }
+    public function scopeDateRange($query, $from, $to) { return $query->whereBetween('date', [$from, $to]); }
+
     protected static function boot()
     {
         parent::boot();

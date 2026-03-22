@@ -81,6 +81,67 @@ class SaleReturnController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+    public function update(Request $request, $id)
+{
+    $ret = SaleReturn::forUser(Auth::id())->with('items')->findOrFail($id);
+
+    $v = $request->validate([
+        'original_sale_id'     => 'required|exists:sale_invoices,id',
+        'refund_amount'        => 'required|numeric|min:0',
+        'reason'               => 'nullable|string|max:500',
+        'date'                 => 'required|date',
+        'items'                => 'required|array|min:1',
+        'items.*.product_id'   => 'required|exists:stock_products,id',
+        'items.*.product_name' => 'required|string',
+        'items.*.quantity'     => 'required|numeric|min:0.01',
+        'items.*.unit_price'   => 'required|numeric|min:0',
+        'items.*.total'        => 'required|numeric|min:0',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // পুরনো stock ফেরত দাও
+        foreach ($ret->items as $item) {
+            StockProduct::where('id', $item->product_id)
+                ->decrement('quantity', $item->quantity);
+        }
+        $ret->items()->delete();
+
+        $ret->update([
+            'sale_invoice_id'         => $v['original_sale_id'],
+            'original_invoice_number' => SaleInvoice::find($v['original_sale_id'])?->invoice_number ?? '',
+            'refund_amount'           => $v['refund_amount'],
+            'reason'                  => $v['reason'] ?? null,
+            'date'                    => $v['date'],
+        ]);
+
+        foreach ($v['items'] as $item) {
+            SaleReturnItem::create([
+                'sale_return_id' => $ret->id,
+                'product_id'     => $item['product_id'],
+                'product_name'   => $item['product_name'],
+                'quantity'       => $item['quantity'],
+                'unit_price'     => $item['unit_price'],
+                'total'          => $item['total'],
+            ]);
+            StockProduct::where('id', $item['product_id'])
+                ->increment('quantity', $item['quantity']);
+        }
+
+        DB::commit();
+        return response()->json([
+            'success' => true,
+            'data'    => $ret->load('items'),
+            'message' => 'Sale return updated',
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
 
     public function destroy($id)
     {

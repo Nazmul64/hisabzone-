@@ -1,5 +1,10 @@
 <?php
 // app/Http/Controllers/Api/CategoryController.php
+// ✅ FIX 1: index() — শুধু নিজের category দেখা যাবে (user_id filter)
+// ✅ FIX 2: store() — category create হলে user_id save হবে
+// ✅ FIX 3: update() — শুধু নিজের category update করা যাবে
+// ✅ FIX 4: destroy() — শুধু নিজের category delete করা যাবে
+// ✅ FIX 5: show() — শুধু নিজের category দেখা যাবে
 
 namespace App\Http\Controllers\Api;
 
@@ -13,12 +18,17 @@ class CategoryController extends Controller
 {
     // ─────────────────────────────────────────────
     // GET /api/categories
+    // ✅ শুধু নিজের (user_id) category দেখাবে
     // Optional: ?is_expense=1 or ?is_expense=0
     // ─────────────────────────────────────────────
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Category::query();
+            // ✅ authenticated user এর id নাও
+            $userId = $request->user()->id;
+
+            $query = Category::query()
+                ->where('user_id', $userId); // ✅ শুধু নিজের category
 
             if ($request->has('is_expense')) {
                 $query->where('is_expense',
@@ -54,17 +64,22 @@ class CategoryController extends Controller
 
     // ─────────────────────────────────────────────
     // POST /api/categories
+    // ✅ category create হলে user_id save হবে
+    // ✅ slug auto-generate হবে name থেকে (unique per user)
     // ─────────────────────────────────────────────
     public function store(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
+
+        // ✅ slug auto-generate করা হবে — user কে দিতে হবে না
+        $rawName = trim($request->input('name', ''));
+        $autoSlug = $this->generateSlug($rawName, $userId);
+
         $validator = Validator::make($request->all(), [
             'name'       => 'required|string|max:255',
-            'slug'       => 'required|string|max:255|unique:categories,slug|regex:/^[a-z0-9_\-]+$/',
             'icon'       => 'nullable|string|max:100',
             'is_expense' => 'required|boolean',
         ], [
-            'slug.unique'   => 'এই slug ইতিমধ্যে আছে',
-            'slug.regex'    => 'Slug শুধু lowercase, number, underscore, hyphen হতে পারে',
             'name.required' => 'নাম দিন',
         ]);
 
@@ -79,8 +94,9 @@ class CategoryController extends Controller
 
         try {
             $category = Category::create([
-                'name'       => trim($request->name),
-                'slug'       => strtolower(trim($request->slug)),
+                'user_id'    => $userId,            // ✅ user_id save
+                'name'       => $rawName,
+                'slug'       => $autoSlug,           // ✅ auto slug
                 'icon'       => $request->input('icon', 'category'),
                 'is_expense' => $request->boolean('is_expense'),
             ]);
@@ -108,10 +124,14 @@ class CategoryController extends Controller
 
     // ─────────────────────────────────────────────
     // GET /api/categories/{id}
+    // ✅ শুধু নিজের category দেখা যাবে
     // ─────────────────────────────────────────────
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $category = Category::find($id);
+        $userId   = $request->user()->id;
+        $category = Category::where('id', $id)
+            ->where('user_id', $userId) // ✅ user_id check
+            ->first();
 
         if (!$category) {
             return response()->json([
@@ -136,10 +156,14 @@ class CategoryController extends Controller
 
     // ─────────────────────────────────────────────
     // PUT /api/categories/{id}
+    // ✅ শুধু নিজের category update করা যাবে
     // ─────────────────────────────────────────────
     public function update(Request $request, string $id): JsonResponse
     {
-        $category = Category::find($id);
+        $userId   = $request->user()->id;
+        $category = Category::where('id', $id)
+            ->where('user_id', $userId) // ✅ user_id check
+            ->first();
 
         if (!$category) {
             return response()->json([
@@ -151,12 +175,8 @@ class CategoryController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name'       => 'sometimes|required|string|max:255',
-            'slug'       => 'sometimes|required|string|max:255|unique:categories,slug,' . $id . '|regex:/^[a-z0-9_\-]+$/',
             'icon'       => 'nullable|string|max:100',
             'is_expense' => 'sometimes|boolean',
-        ], [
-            'slug.unique' => 'এই slug ইতিমধ্যে আছে',
-            'slug.regex'  => 'Slug শুধু lowercase, number, underscore, hyphen হতে পারে',
         ]);
 
         if ($validator->fails()) {
@@ -170,8 +190,14 @@ class CategoryController extends Controller
 
         try {
             $fillable = [];
-            if ($request->has('name'))       $fillable['name']       = trim($request->name);
-            if ($request->has('slug'))       $fillable['slug']       = strtolower(trim($request->slug));
+
+            if ($request->has('name')) {
+                $newName          = trim($request->name);
+                $fillable['name'] = $newName;
+                // ✅ নাম বদলালে slug ও update করো
+                $fillable['slug'] = $this->generateSlug($newName, $userId, $id);
+            }
+
             if ($request->has('icon'))       $fillable['icon']       = $request->input('icon', 'category');
             if ($request->has('is_expense')) $fillable['is_expense'] = $request->boolean('is_expense');
 
@@ -201,10 +227,14 @@ class CategoryController extends Controller
 
     // ─────────────────────────────────────────────
     // DELETE /api/categories/{id}
+    // ✅ শুধু নিজের category delete করা যাবে
     // ─────────────────────────────────────────────
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        $category = Category::find($id);
+        $userId   = $request->user()->id;
+        $category = Category::where('id', $id)
+            ->where('user_id', $userId) // ✅ user_id check
+            ->first();
 
         if (!$category) {
             return response()->json([
@@ -230,5 +260,37 @@ class CategoryController extends Controller
                 'data'    => null,
             ], 500);
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // generateSlug() — name থেকে unique slug বানাও
+    // ✅ same user এর duplicate slug হবে না
+    // ─────────────────────────────────────────────
+    private function generateSlug(string $name, int $userId, string $excludeId = null): string
+    {
+        // lowercase + space→underscore + শুধু alphanumeric/underscore রাখো
+        $base = strtolower(trim($name));
+        $base = preg_replace('/\s+/', '_', $base);
+        $base = preg_replace('/[^a-z0-9_\-]/', '', $base);
+
+        if (empty($base)) {
+            $base = 'category_' . time();
+        }
+
+        $slug  = $base;
+        $count = 1;
+
+        // ✅ same user এর মধ্যে unique করো
+        while (
+            Category::where('slug', $slug)
+                ->where('user_id', $userId)
+                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->exists()
+        ) {
+            $slug = $base . '_' . $count;
+            $count++;
+        }
+
+        return $slug;
     }
 }

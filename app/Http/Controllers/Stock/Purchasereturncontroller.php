@@ -126,6 +126,74 @@ class PurchaseReturnController extends Controller
             ], 500);
         }
     }
+    // PurchaseReturnController এ update method যোগ করো
+public function update(Request $request, $id)
+{
+    $userId = Auth::id();
+    $ret    = PurchaseReturn::where('user_id', $userId)->with('items')->findOrFail($id);
+
+    $validated = $request->validate([
+        'original_purchase_id'  => 'required|exists:purchase_invoices,id',
+        'refund_amount'         => 'required|numeric|min:0',
+        'reason'                => 'nullable|string|max:500',
+        'date'                  => 'required|date',
+        'items'                 => 'required|array|min:1',
+        'items.*.product_id'    => 'required|exists:stock_products,id',
+        'items.*.product_name'  => 'required|string',
+        'items.*.quantity'      => 'required|numeric|min:0.01',
+        'items.*.unit_price'    => 'required|numeric|min:0',
+        'items.*.total'         => 'required|numeric|min:0',
+    ]);
+
+    $purchase = PurchaseInvoice::where('id', $validated['original_purchase_id'])
+                    ->where('user_id', $userId)->firstOrFail();
+
+    DB::beginTransaction();
+    try {
+        // পুরনো stock ফেরত দাও
+        foreach ($ret->items as $item) {
+            StockProduct::where('id', $item->product_id)
+                ->where('user_id', $userId)
+                ->increment('quantity', $item->quantity);
+        }
+        $ret->items()->delete();
+
+        $ret->update([
+            'purchase_invoice_id'     => $validated['original_purchase_id'],
+            'original_invoice_number' => $purchase->invoice_number ?? '',
+            'refund_amount'           => $validated['refund_amount'],
+            'reason'                  => $validated['reason'] ?? null,
+            'date'                    => $validated['date'],
+        ]);
+
+        foreach ($validated['items'] as $item) {
+            PurchaseReturnItem::create([
+                'purchase_return_id' => $ret->id,
+                'product_id'         => $item['product_id'],
+                'product_name'       => $item['product_name'],
+                'quantity'           => $item['quantity'],
+                'unit_price'         => $item['unit_price'],
+                'total'              => $item['total'],
+            ]);
+            StockProduct::where('id', $item['product_id'])
+                ->where('user_id', $userId)
+                ->decrement('quantity', $item['quantity']);
+            StockProduct::where('id', $item['product_id'])
+                ->where('quantity', '<', 0)
+                ->update(['quantity' => 0]);
+        }
+
+        DB::commit();
+        return response()->json([
+            'success' => true,
+            'data'    => $ret->load('items'),
+            'message' => 'Purchase return updated',
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
 
     // ────────────────────────────────────────────────
     // DELETE /stock/purchase-returns/{id}

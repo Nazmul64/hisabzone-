@@ -70,10 +70,10 @@ use App\Http\Controllers\Stock\SaleInvoiceController;
 use App\Http\Controllers\Stock\PurchaseInvoiceController;
 use App\Http\Controllers\Stock\StockAdjustmentController;
 use App\Http\Controllers\Stock\StockPaymentController;
-use App\Http\Controllers\Stock\StockExpenseController;
+use App\Http\Controllers\Stock\Stockexpensecontroller;
 use App\Http\Controllers\Stock\SaleReturnController;
-use App\Http\Controllers\Stock\PurchaseReturnController;
-use App\Http\Controllers\Stock\StockReportController;
+use App\Http\Controllers\Stock\Purchasereturncontroller;
+use App\Http\Controllers\Stock\Stockreportcontroller;
 use App\Http\Controllers\Stock\StockDashboardController;
 use App\Http\Controllers\Stock\InvoiceSettingsController;
 
@@ -89,6 +89,8 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\TailorReportController;
 use App\Http\Controllers\Api\TailorSalaryController;
 use App\Http\Controllers\Api\SalaryHistoryController;
+use App\Http\Controllers\Api\ScoreTournamentController;
+use App\Http\Controllers\Api\ScoreBallController;
 
 // ── Pharmacy Controllers ─────────────────────────────────────
 use App\Http\Controllers\Api\Pharmacy\PharmacyDashboardController;
@@ -103,21 +105,24 @@ use App\Http\Controllers\Api\Pharmacy\PharmacyEmployeeController;
 use App\Http\Controllers\Api\Pharmacy\PharmacyExpenseController;
 use App\Http\Controllers\Api\Pharmacy\PharmacyReturnController;
 
+
+
+
 // ── Nursery Controllers ──────────────────────────────────────
 use App\Http\Controllers\Nursery\NurseryDashboardController;
 use App\Http\Controllers\Nursery\NurseryPlantCategoryController;
-use App\Http\Controllers\Nursery\NurseryPlantController;
-use App\Http\Controllers\Nursery\NurserySupplierController;
+use App\Http\Controllers\Nursery\Nurseryplantcontroller;
+use App\Http\Controllers\Nursery\Nurserysuppliercontroller;
 use App\Http\Controllers\Nursery\NurseryCustomerController;
-use App\Http\Controllers\Nursery\NurseryPurchaseController;
-use App\Http\Controllers\Nursery\NurserySaleController;
-use App\Http\Controllers\Nursery\NurseryEmployeeController;
-use App\Http\Controllers\Nursery\NurseryGardenAreaController;
-use App\Http\Controllers\Nursery\NurseryPlantCareController;
-use App\Http\Controllers\Nursery\NurseryFertilizerController;
-use App\Http\Controllers\Nursery\NurseryExpenseController;
-use App\Http\Controllers\Nursery\NurseryOrderController;
-use App\Http\Controllers\Nursery\NurseryDeliveryController;
+use App\Http\Controllers\Nursery\Nurserypurchasecontroller;
+use App\Http\Controllers\Nursery\Nurserysalecontroller;
+use App\Http\Controllers\Nursery\Nurseryemployeecontroller;
+use App\Http\Controllers\Nursery\Nurserygardenareacontroller;
+use App\Http\Controllers\Nursery\Nurseryplantcarecontroller;
+use App\Http\Controllers\Nursery\Nurseryfertilizercontroller;
+use App\Http\Controllers\Nursery\Nurseryexpensecontroller;
+use App\Http\Controllers\Nursery\Nurseryordercontroller;
+use App\Http\Controllers\Nursery\Nurserydeliverycontroller;
 use App\Http\Controllers\Nursery\NurseryReportController;
 
 
@@ -280,9 +285,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('members/{id}', [SamitiMemberController::class, 'destroy']);
 
         // Savings
-        Route::get('savings',         [SamitiSavingController::class, 'index']);
-        Route::post('savings',        [SamitiSavingController::class, 'store']);
-        Route::delete('savings/{id}', [SamitiSavingController::class, 'destroy']);
+        // Route::get('savings',         [SamitiSavingController::class, 'index']);
+        // Route::post('savings',        [SamitiSavingController::class, 'store']);
+        // Route::delete('savings/{id}', [SamitiSavingController::class, 'destroy']);
+        Route::get('savings',          [SamitiSavingController::class, 'index']);
+        Route::post('savings',         [SamitiSavingController::class, 'store']);
+        Route::put('savings/{id}',     [SamitiSavingController::class, 'update']);   // ✅ নতুন
+        Route::delete('savings/{id}',  [SamitiSavingController::class, 'destroy']);
 
         // Collections — ⚠️ static 'collect-all' BEFORE dynamic {id}
         Route::get('collections',               [SamitiCollectionController::class, 'index']);
@@ -349,45 +358,89 @@ Route::middleware('auth:sanctum')->group(function () {
         // Dashboard
         Route::get('dashboard', [StockDashboardController::class, 'index']);
 
-        // Products — ⚠️ static routes BEFORE apiResource
+        // // Products — ⚠️ static routes BEFORE apiResource
+        // Route::get('products/categories', [StockProductController::class, 'categories']);
+        // Route::get('products/low-stock',  [StockProductController::class, 'lowStock']);
+        // Route::apiResource('products',    StockProductController::class);
+
         Route::get('products/categories', [StockProductController::class, 'categories']);
         Route::get('products/low-stock',  [StockProductController::class, 'lowStock']);
-        Route::apiResource('products',    StockProductController::class);
+
+        // ★ FIX: apiResource এর বদলে explicit routes
+        // {product} এর বদলে {id} ব্যবহার করছি — Laravel আর Model Binding করবে না
+        Route::get('products',           [StockProductController::class, 'index']);
+        Route::post('products',          [StockProductController::class, 'store']);
+        Route::get('products/{id}',      [StockProductController::class, 'show']);
+        Route::put('products/{id}',      [StockProductController::class, 'update']);
+        Route::patch('products/{id}',    [StockProductController::class, 'update']);
+        Route::delete('products/{id}',   [StockProductController::class, 'destroy']);
+
 
         // Parties — ⚠️ ledger BEFORE apiResource
         Route::get('parties/{id}/ledger', [StockPartyController::class, 'ledger']);
         Route::apiResource('parties',     StockPartyController::class);
 
         // Sales — ⚠️ next-number BEFORE apiResource
-        Route::get('sales/next-number', [SaleInvoiceController::class, 'nextNumber']);
-        Route::apiResource('sales',     SaleInvoiceController::class);
+        // Route::get('sales/next-number', [SaleInvoiceController::class, 'nextNumber']);
+        // Route::apiResource('sales',     SaleInvoiceController::class);
+       // stock/sales routes — next-number অবশ্যই {id} এর আগে
+        Route::get('sales/next-number',  [SaleInvoiceController::class, 'nextNumber']);
+        Route::get('sales',              [SaleInvoiceController::class, 'index']);
+        Route::post('sales',             [SaleInvoiceController::class, 'store']);
+        Route::get('sales/{id}',         [SaleInvoiceController::class, 'show']);
+        Route::put('sales/{id}',         [SaleInvoiceController::class, 'update']);
+        Route::patch('sales/{id}',       [SaleInvoiceController::class, 'update']);
+        Route::delete('sales/{id}',      [SaleInvoiceController::class, 'destroy']);
+
 
         // Purchases — ⚠️ next-number BEFORE apiResource
-        Route::get('purchases/next-number', [PurchaseInvoiceController::class, 'nextNumber']);
-        Route::apiResource('purchases',     PurchaseInvoiceController::class);
+        // Route::get('purchases/next-number', [PurchaseInvoiceController::class, 'nextNumber']);
+        // Route::apiResource('purchases',     PurchaseInvoiceController::class);
+        // ✅ এটা দাও
+        Route::get('purchases/next-number',  [PurchaseInvoiceController::class, 'nextNumber']);
+        Route::get('purchases',              [PurchaseInvoiceController::class, 'index']);
+        Route::post('purchases',             [PurchaseInvoiceController::class, 'store']);
+        Route::get('purchases/{id}',         [PurchaseInvoiceController::class, 'show']);
+        Route::put('purchases/{id}',         [PurchaseInvoiceController::class, 'update']);
+        Route::patch('purchases/{id}',       [PurchaseInvoiceController::class, 'update']);
+        Route::delete('purchases/{id}',      [PurchaseInvoiceController::class, 'destroy']);
 
         // Adjustments
-        Route::get('adjustments',         [StockAdjustmentController::class, 'index']);
-        Route::post('adjustments',        [StockAdjustmentController::class, 'store']);
-        Route::delete('adjustments/{id}', [StockAdjustmentController::class, 'destroy']);
+        // Route::get('adjustments',         [StockAdjustmentController::class, 'index']);
+        // Route::post('adjustments',        [StockAdjustmentController::class, 'store']);
+        // Route::delete('adjustments/{id}', [StockAdjustmentController::class, 'destroy']);
 
-        // Payments
-        Route::get('payments',         [StockPaymentController::class, 'index']);
-        Route::post('payments',        [StockPaymentController::class, 'store']);
-        Route::delete('payments/{id}', [StockPaymentController::class, 'destroy']);
+        Route::get    ('adjustments',         [StockAdjustmentController::class, 'index']);   // list
+        Route::post   ('adjustments',         [StockAdjustmentController::class, 'store']);   // create
+        Route::put    ('adjustments/{id}',    [StockAdjustmentController::class, 'update']);  // ✅ edit
+        Route::delete ('adjustments/{id}',    [StockAdjustmentController::class, 'destroy']); // delete
+
+
+        // Payments ─────────────────────────────────────────
+        Route::get    ('payments',         [StockPaymentController::class, 'index']);   // সব payment list
+        Route::post   ('payments',         [StockPaymentController::class, 'store']);   // নতুন payment তৈরি
+        Route::put    ('payments/{id}',    [StockPaymentController::class, 'update']);  // ✅ payment edit
+        Route::delete ('payments/{id}',    [StockPaymentController::class, 'destroy']); // payment delete
 
         // Expenses
         Route::apiResource('expenses', StockExpenseController::class)->except(['show']);
 
         // Sale Returns
-        Route::get('sale-returns',         [SaleReturnController::class, 'index']);
-        Route::post('sale-returns',        [SaleReturnController::class, 'store']);
-        Route::delete('sale-returns/{id}', [SaleReturnController::class, 'destroy']);
+        Route::get('sale-returns',          [SaleReturnController::class, 'index']);
+        Route::post('sale-returns',         [SaleReturnController::class, 'store']);
+        Route::put('sale-returns/{id}',     [SaleReturnController::class, 'update']);
+        Route::patch('sale-returns/{id}',   [SaleReturnController::class, 'update']);
+        Route::delete('sale-returns/{id}',  [SaleReturnController::class, 'destroy']);
 
         // Purchase Returns
-        Route::get('purchase-returns',         [PurchaseReturnController::class, 'index']);
-        Route::post('purchase-returns',        [PurchaseReturnController::class, 'store']);
-        Route::delete('purchase-returns/{id}', [PurchaseReturnController::class, 'destroy']);
+        // Route::get('purchase-returns',         [PurchaseReturnController::class, 'index']);
+        // Route::post('purchase-returns',        [PurchaseReturnController::class, 'store']);
+        // Route::delete('purchase-returns/{id}', [PurchaseReturnController::class, 'destroy']);
+        Route::get('purchase-returns',          [PurchaseReturnController::class, 'index']);
+        Route::post('purchase-returns',         [PurchaseReturnController::class, 'store']);
+        Route::put('purchase-returns/{id}',     [PurchaseReturnController::class, 'update']);
+        Route::patch('purchase-returns/{id}',   [PurchaseReturnController::class, 'update']);
+        Route::delete('purchase-returns/{id}',  [PurchaseReturnController::class, 'destroy']);
 
         // Reports
         Route::prefix('reports')->group(function () {
@@ -445,6 +498,35 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('history',         [ScoreHistoryController::class, 'index']);
         Route::get('history/{id}',    [ScoreHistoryController::class, 'show']);
         Route::delete('history/{id}', [ScoreHistoryController::class, 'destroy']);
+
+
+        Route::get('tournaments',                 [ScoreTournamentController::class, 'index']);
+        Route::post('tournaments',                [ScoreTournamentController::class, 'store']);
+        Route::get('tournaments/{id}',            [ScoreTournamentController::class, 'show']);
+        Route::patch('tournaments/{id}',          [ScoreTournamentController::class, 'update']);
+        Route::delete('tournaments/{id}',         [ScoreTournamentController::class, 'destroy']);
+
+        // পয়েন্ট টেবিল + অ্যানালিসিস
+        Route::get('tournaments/{id}/points-table', [ScoreTournamentController::class, 'pointsTable']);
+        Route::get('tournaments/{id}/analysis',     [ScoreTournamentController::class, 'analysis']);
+
+        // টুর্নামেন্ট দল
+        Route::post('tournaments/{id}/teams',     [ScoreTournamentController::class, 'addTeam']);
+        Route::patch('tournament-teams/{id}',     [ScoreTournamentController::class, 'updateTeam']);
+        Route::delete('tournament-teams/{id}',    [ScoreTournamentController::class, 'removeTeam']);
+
+        // শিডিউল (Fixtures)
+        Route::post('tournaments/{id}/fixtures',  [ScoreTournamentController::class, 'addFixture']);
+        Route::patch('fixtures/{id}',             [ScoreTournamentController::class, 'updateFixture']);
+        Route::delete('fixtures/{id}',            [ScoreTournamentController::class, 'destroyFixture']);
+
+        // ── বল-বল ট্র্যাকিং ────────────────────────────────────
+        Route::get('teams/{id}/balls',            [ScoreBallController::class, 'index']);
+        Route::post('teams/{id}/balls',           [ScoreBallController::class, 'store']);
+        Route::get('teams/{id}/balls/summary',    [ScoreBallController::class, 'summary']);
+        Route::patch('balls/{id}/toggle-cut',     [ScoreBallController::class, 'toggleCut']);
+        Route::delete('balls/{id}',               [ScoreBallController::class, 'destroy']);
+
 
     }); // end scorehub
 
@@ -543,6 +625,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('inventory/sync',        [BrickkilnInventoryController::class, 'sync']);
         Route::get('inventory',             [BrickkilnInventoryController::class, 'index']);
         Route::put('inventory/{inventory}', [BrickkilnInventoryController::class, 'update']);
+        Route::delete('inventory/{inventory}', [BrickkilnInventoryController::class, 'destroy']);
 
         // Expenses — ⚠️ static 'expense-categories' BEFORE apiResource
         Route::get('expense-categories', [BrickkilnExpenseController::class, 'categories']);

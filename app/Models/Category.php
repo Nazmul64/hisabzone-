@@ -22,6 +22,7 @@ class Category extends Model
         'slug',
         'icon',
         'is_expense',
+        'user_id',
     ];
 
     protected $casts = [

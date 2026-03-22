@@ -13,11 +13,22 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');         // Admin যে ভাষায় দিক
-            $table->string('slug')->unique(); // ✅ এটাই translation key (food, salary, etc.)
+
+            // ✅ FIX: user_id যোগ করা হয়েছে — প্রতিটি category একজন user এর
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->onDelete('cascade'); // user delete হলে তার categories ও delete হবে
+
+            $table->string('name');         // user যে নাম দেবে
+            $table->string('slug');         // ✅ FIX: unique() সরানো হয়েছে
+                                            // কারণ দুই আলাদা user এর same slug হতে পারে
+                                            // unique হবে user_id+slug কম্বিনেশনে
             $table->boolean('is_expense')->default(true);
-             $table->string('icon')->default('category')->nullable(); // Material icon name (Flutter-এ IconData-তে convert হয়)
+            $table->string('icon')->default('category')->nullable(); // Material icon name
             $table->timestamps();
+
+            // ✅ FIX: global unique নয় — একই user এর মধ্যে slug unique হবে
+            $table->unique(['user_id', 'slug']); // user_id + slug কম্বো unique
         });
     }
 
